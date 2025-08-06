@@ -113,7 +113,7 @@ export default function LoginForm() {
                 </div>
               </div>
               
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
                 Sign In
               </Button>
             </form>
