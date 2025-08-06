@@ -8,10 +8,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useIsMobile } from "@/hooks/use-mobile"
 
 const navigation = [
-  { name: "Features", href: "#features" },
-  { name: "How it Works", href: "#how-it-works" },
-  { name: "Pricing", href: "#pricing" },
-  { name: "Contact", href: "#contact" },
+  { name: "Features", href: "/#features" },
+  { name: "How it Works", href: "/#how-it-works" },
+  { name: "Pricing", href: "/pricing" },
+  { name: "Contact", href: "/contact" },
 ]
 
 export default function Header() {
