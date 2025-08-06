@@ -48,9 +48,11 @@ export default function Header() {
         {/* Desktop CTA Buttons */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
           <Button variant="ghost" className="text-gray-900 hover:text-purple-600">
-            Log in
+            <Link href="/login">Log in</Link>
           </Button>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white">Get Started</Button>
+          <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Link href="/signup">Get Started</Link>
+          </Button>
         </div>
 
         {/* Mobile Menu */}
@@ -92,14 +94,15 @@ export default function Header() {
                     className="w-full justify-start text-gray-900 hover:text-purple-600"
                     onClick={() => setIsOpen(false)}
                   >
-                    Log in
+                    <Link href="/login">Log in</Link>
                   </Button>
                   <Button
                     size="sm"
                     className="w-auto px-8 bg-purple-600 hover:bg-purple-700 text-white mx-auto block"
                     onClick={() => setIsOpen(false)}
                   >
-                    Get Started
+                    <Link href="/signup">Get Started</Link>
+
                   </Button>
                 </div>
               </div>
