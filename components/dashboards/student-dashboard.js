@@ -1,50 +1,56 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { CreditCard, Clock, AlertCircle, CheckCircle, Download, Copy, Calendar, DollarSign } from 'lucide-react'
+import { CreditCard, Clock, AlertCircle, CheckCircle, Download, Copy, Calendar, DollarSign, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function StudentDashboard() {
   const [copied, setCopied] = useState(false)
+  const [dashboardData, setDashboardData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Mock student data
-  const studentData = {
-    name: "Ada Okafor",
-    studentId: "CSC/2021/001",
-    department: "Computer Science",
-    currentDue: {
-      amount: 25000,
-      description: "2024/2025 Academic Session Dues",
-      deadline: "2024-02-15",
-      status: "unpaid" // paid, unpaid, overdue
-    },
-    bankDetails: {
-      bankName: "First Bank Nigeria",
-      accountNumber: "2034567890",
-      accountName: "Computer Science Department"
-    },
-    paymentHistory: [
-      {
-        id: 1,
-        session: "2023/2024",
-        amount: 20000,
-        datePaid: "2023-10-15",
-        status: "paid",
-        reference: "TXN123456789"
-      },
-      {
-        id: 2,
-        session: "2022/2023",
-        amount: 18000,
-        datePaid: "2022-11-20",
-        status: "paid",
-        reference: "TXN987654321"
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        window.location.href = '/login'
+        return
       }
-    ]
+
+      const response = await fetch('/api/student/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setDashboardData(data)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to fetch dashboard data')
+        if (response.status === 401) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          window.location.href = '/login'
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      setError('Failed to fetch dashboard data')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getStatusColor = (status) => {
@@ -68,63 +74,112 @@ export default function StudentDashboard() {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
+    toast.success('Account number copied to clipboard!')
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const isOverdue = new Date(studentData.currentDue.deadline) < new Date()
-  const currentStatus = isOverdue ? "overdue" : studentData.currentDue.status
+  if (loading) {
+    return (
+      <DashboardLayout userType="student" userName="Loading...">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading dashboard...</span>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout userType="student" userName="Error">
+        <div className="text-center py-8">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">{error}</p>
+          <Button onClick={fetchDashboardData} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!dashboardData) {
+    return (
+      <DashboardLayout userType="student" userName="No Data">
+        <div className="text-center py-8">
+          <p className="text-gray-600">No dashboard data available</p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const { student, currentDue, paymentHistory, bankDetails } = dashboardData
+  const isOverdue = currentDue && new Date(currentDue.deadline) < new Date()
+  const currentStatus = isOverdue ? "overdue" : (currentDue?.status || "paid")
 
   return (
-    <DashboardLayout userType="student" userName={studentData.name}>
+    <DashboardLayout userType="student" userName={student.name}>
       <div className="space-y-6">
         {/* Welcome Section */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back, {studentData.name}</h1>
-          <p className="text-gray-600">{studentData.studentId} • {studentData.department}</p>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome back, {student.name}</h1>
+          <p className="text-gray-600">{student.studentId} • {student.department}</p>
         </div>
 
         {/* Current Due Status */}
-        <Card className="border-l-4 border-l-purple-600">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center space-x-2">
-                <CreditCard className="h-5 w-5" />
-                <span>Current Payment Status</span>
-              </span>
-              <Badge className={getStatusColor(currentStatus)}>
-                {getStatusIcon(currentStatus)}
-                <span className="ml-1 capitalize">{currentStatus}</span>
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Amount Due</p>
-                <p className="text-2xl font-bold text-gray-900">₦{studentData.currentDue.amount.toLocaleString()}</p>
+        {currentDue ? (
+          <Card className="border-l-4 border-l-purple-600">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center space-x-2">
+                  <CreditCard className="h-5 w-5" />
+                  <span>Current Payment Status</span>
+                </span>
+                <Badge className={getStatusColor(currentStatus)}>
+                  {getStatusIcon(currentStatus)}
+                  <span className="ml-1 capitalize">{currentStatus}</span>
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Amount Due</p>
+                  <p className="text-2xl font-bold text-gray-900">₦{currentDue.amount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Session</p>
+                  <p className="text-lg font-semibold">{currentDue.description}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Payment Deadline</p>
+                  <p className="text-lg font-semibold flex items-center space-x-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date(currentDue.deadline).toLocaleDateString()}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Session</p>
-                <p className="text-lg font-semibold">{studentData.currentDue.description}</p>
+              {currentStatus === "overdue" && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 text-sm">
+                    <AlertCircle className="h-4 w-4 inline mr-1" />
+                    Your payment is overdue. Please make payment as soon as possible to avoid penalties.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-l-4 border-l-green-600">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900">No Outstanding Dues</h3>
+                <p className="text-gray-600">You're all caught up with your payments!</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Payment Deadline</p>
-                <p className="text-lg font-semibold flex items-center space-x-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>{new Date(studentData.currentDue.deadline).toLocaleDateString()}</span>
-                </p>
-              </div>
-            </div>
-            {currentStatus === "overdue" && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">
-                  <AlertCircle className="h-4 w-4 inline mr-1" />
-                  Your payment is overdue. Please make payment as soon as possible to avoid penalties.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="payment-info" className="space-y-4">
           <TabsList>
@@ -142,49 +197,56 @@ export default function StudentDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-900 mb-2">Bank Transfer Details</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-blue-700">Bank Name:</span>
-                      <span className="font-medium">{studentData.bankDetails.bankName}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-blue-700">Account Number:</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-medium">{studentData.bankDetails.accountNumber}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => copyToClipboard(studentData.bankDetails.accountNumber)}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
+                {bankDetails ? (
+                  <>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-blue-900 mb-2">Bank Transfer Details</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-blue-700">Bank Name:</span>
+                          <span className="font-medium">{bankDetails.bankName}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-blue-700">Account Number:</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono font-medium">{bankDetails.accountNumber}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyToClipboard(bankDetails.accountNumber)}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-blue-700">Account Name:</span>
+                          <span className="font-medium">{bankDetails.accountName}</span>
+                        </div>
+                        {currentDue && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-blue-700">Amount:</span>
+                            <span className="font-bold text-lg">₦{currentDue.amount.toLocaleString()}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-blue-700">Account Name:</span>
-                      <span className="font-medium">{studentData.bankDetails.accountName}</span>
+
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-yellow-900 mb-2">Important Instructions</h3>
+                      <ul className="text-sm text-yellow-800 space-y-1">
+                        <li>• Use your Student ID ({student.studentId}) as payment reference</li>
+                        <li>• Keep your payment receipt/teller for verification</li>
+                        <li>• Payment confirmation may take 24-48 hours after verification</li>
+                        <li>• Contact the department office if payment is not reflected after 48 hours</li>
+                      </ul>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-blue-700">Amount:</span>
-                      <span className="font-bold text-lg">₦{studentData.currentDue.amount.toLocaleString()}</span>
-                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                    <p className="text-gray-600">Bank details not available. Please contact your department office.</p>
                   </div>
-                </div>
-
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-yellow-900 mb-2">Important Instructions</h3>
-                  <ul className="text-sm text-yellow-800 space-y-1">
-                    <li>• Use your Student ID ({studentData.studentId}) as payment reference</li>
-                    <li>• Keep your payment receipt/teller for verification</li>
-                    <li>• Payment confirmation may take 24-48 hours after verification</li>
-                    <li>• Contact the department office if payment is not reflected after 48 hours</li>
-                  </ul>
-                </div>
-
-                {copied && (
-                  <div className="text-green-600 text-sm">Account number copied to clipboard!</div>
                 )}
               </CardContent>
             </Card>
@@ -197,9 +259,9 @@ export default function StudentDashboard() {
                 <CardTitle>Payment History</CardTitle>
               </CardHeader>
               <CardContent>
-                {studentData.paymentHistory.length > 0 ? (
+                {paymentHistory.length > 0 ? (
                   <div className="space-y-4">
-                    {studentData.paymentHistory.map((payment) => (
+                    {paymentHistory.map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
