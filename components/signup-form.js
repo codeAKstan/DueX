@@ -1,28 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function SignupForm() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [selectedRole, setSelectedRole] = useState('student')
     const [emailError, setEmailError] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [adminExists, setAdminExists] = useState(false)
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         regNo: '',
         department: '',
+        position: '',
         password: '',
         confirmPassword: '',
         role: 'student'
     })
+
+    // Check if admin exists on component mount
+    useEffect(() => {
+        checkAdminExists()
+    }, [])
+
+    const checkAdminExists = async () => {
+        try {
+            const response = await fetch('/api/auth/admin-exists')
+            const data = await response.json()
+            setAdminExists(data.adminExists)
+        } catch (error) {
+            console.error('Error checking admin existence:', error)
+        }
+    }
 
     // List of departments
     const departments = [
@@ -85,17 +104,70 @@ export default function SignupForm() {
         }))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         
-        // Validate email before submission
-        if (!validateEmail(formData.email)) {
-            setEmailError('Email must be in the format: username@unn.edu.ng')
+        // Validation
+        if (formData.password !== formData.confirmPassword) {
+            toast.error('Passwords do not match')
             return
         }
-        
-        // Handle signup logic here
-        console.log('Signup form submitted:', formData)
+
+        if (formData.password.length < 6) {
+            toast.error('Password must be at least 6 characters long')
+            return
+        }
+
+        if (emailError) {
+            toast.error('Please enter a valid email address')
+            return
+        }
+
+        // Check admin creation restriction
+        if (selectedRole === 'admin' && adminExists) {
+            toast.error('Admin accounts can only be created by existing admins')
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const response = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    role: selectedRole
+                })
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                toast.success('Account created successfully!')
+                // Store token and redirect
+                localStorage.setItem('token', data.token)
+                localStorage.setItem('user', JSON.stringify(data.user))
+                
+                // Redirect based on role
+                if (data.user.role === 'admin') {
+                    window.location.href = '/admin/dashboard'
+                } else if (data.user.role === 'official') {
+                    window.location.href = '/official/dashboard'
+                } else {
+                    window.location.href = '/student/dashboard'
+                }
+            } else {
+                toast.error(data.error || 'Failed to create account')
+            }
+        } catch (error) {
+            console.error('Signup error:', error)
+            toast.error('An error occurred. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -113,28 +185,49 @@ export default function SignupForm() {
                 {/* Role Selection */}
                 <div className="text-center">
                     <p className="text-lg font-medium text-gray-900 mb-4">I want to join as:</p>
-                    <div className="flex gap-4 justify-center">
+                    <div className="flex gap-4 justify-center flex-wrap">
                         <button
                             type="button"
                             onClick={() => handleRoleChange('student')}
-                            className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 ${selectedRole === 'student'
+                            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                                selectedRole === 'student'
                                     ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                }`}
+                            }`}
                         >
                             Student
                         </button>
                         <button
                             type="button"
                             onClick={() => handleRoleChange('official')}
-                            className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 ${selectedRole === 'official'
+                            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                                selectedRole === 'official'
                                     ? 'bg-purple-600 text-white shadow-lg'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                }`}
+                            }`}
                         >
                             Official
                         </button>
+                        {!adminExists && (
+                            <button
+                                type="button"
+                                onClick={() => handleRoleChange('admin')}
+                                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                                    selectedRole === 'admin'
+                                        ? 'bg-red-600 text-white shadow-lg'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                            >
+                                {/* Admin */}
+                            </button>
+                        )}
                     </div>
+                    {adminExists && (
+                        <div className="mt-2 flex items-center justify-center text-sm text-amber-600">
+                            {/* <AlertCircle className="h-4 w-4 mr-1" /> */}
+                            {/* Admin accounts can only be created by existing admins */}
+                        </div>
+                    )}
                 </div>
 
                 <Card>
@@ -177,16 +270,20 @@ export default function SignupForm() {
                             </CardContent>
                         </>
                     ) : (
-                        // Regular Student Registration Form
+                        // Registration Form
                         <>
                             <CardHeader>
                                 <CardTitle>Sign Up</CardTitle>
                                 <CardDescription>
-                                    Fill in your details to create your DueX account
+                                    {selectedRole === 'admin' 
+                                        ? 'Create the first admin account for your institution'
+                                        : 'Create your account to get started'
+                                    }
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    {/* Name fields */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -218,6 +315,7 @@ export default function SignupForm() {
                                         </div>
                                     </div>
 
+                                    {/* Email */}
                                     <div>
                                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                                             Email Address
@@ -229,17 +327,20 @@ export default function SignupForm() {
                                             required
                                             value={formData.email}
                                             onChange={handleInputChange}
-                                            placeholder="john.doe@unn.edu.ng"
+                                            placeholder={selectedRole === 'student' ? 'john.doe@unn.edu.ng' : 'john.doe@university.edu'}
                                             className={emailError ? 'border-red-500' : ''}
                                         />
                                         {emailError && (
                                             <p className="mt-1 text-sm text-red-600">{emailError}</p>
                                         )}
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Must be a valid @unn.edu.ng email address
-                                        </p>
+                                        {selectedRole === 'student' && (
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                Must be a valid @unn.edu.ng email address
+                                            </p>
+                                        )}
                                     </div>
 
+                                    {/* Role-specific fields */}
                                     {selectedRole === 'student' && (
                                         <>
                                             <div>
@@ -253,16 +354,15 @@ export default function SignupForm() {
                                                     required
                                                     value={formData.regNo}
                                                     onChange={handleInputChange}
-                                                    placeholder="2021/2467171"
+                                                    placeholder="2020/123456"
                                                 />
                                             </div>
-
                                             <div>
                                                 <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
                                                     Department
                                                 </label>
-                                                <Select value={formData.department} onValueChange={handleSelectChange}>
-                                                    <SelectTrigger className="w-full">
+                                                <Select onValueChange={handleSelectChange} required>
+                                                    <SelectTrigger>
                                                         <SelectValue placeholder="Select your department" />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -277,23 +377,21 @@ export default function SignupForm() {
                                         </>
                                     )}
 
-                                    {selectedRole === 'official' && (
-                                        <div>
-                                            <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Position/Title
-                                            </label>
-                                            <Input
-                                                id="position"
-                                                name="position"
-                                                type="text"
-                                                required
-                                                value={formData.position || ''}
-                                                onChange={handleInputChange}
-                                                placeholder="Department Head, Administrator, etc."
-                                            />
+                                    {selectedRole === 'admin' && (
+                                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="flex items-center">
+                                                <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+                                                <h3 className="text-sm font-medium text-red-800">
+                                                    Creating First Admin Account
+                                                </h3>
+                                            </div>
+                                            <p className="mt-1 text-sm text-red-700">
+                                                You are creating the first administrator account for your institution. This account will have full system access.
+                                            </p>
                                         </div>
                                     )}
 
+                                    {/* Password fields */}
                                     <div>
                                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                                             Password
@@ -306,8 +404,9 @@ export default function SignupForm() {
                                                 required
                                                 value={formData.password}
                                                 onChange={handleInputChange}
-                                                placeholder="Create a strong password"
+                                                placeholder="Enter your password"
                                                 className="pr-10"
+                                                minLength={6}
                                             />
                                             <button
                                                 type="button"
@@ -352,8 +451,12 @@ export default function SignupForm() {
                                         </div>
                                     </div>
 
-                                    <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
-                                        Create Account
+                                    <Button 
+                                        type="submit" 
+                                        className="w-full bg-purple-600 hover:bg-purple-700"
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Creating Account...' : 'Create Account'}
                                     </Button>
                                 </form>
                                 
