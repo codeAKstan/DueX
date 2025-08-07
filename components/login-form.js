@@ -47,18 +47,17 @@ export default function LoginForm() {
 
       if (response.ok) {
         toast.success('Login successful!')
-        
         // Store token and user data
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // Redirect based on role
+        // Redirect based on role - FIXED ROUTES
         if (data.user.role === 'admin') {
-          window.location.href = '/admin/dashboard'
+            window.location.href = '/dashboard/admin'
         } else if (data.user.role === 'official') {
-          window.location.href = '/official/dashboard'
+            window.location.href = '/dashboard/official'
         } else {
-          window.location.href = '/student/dashboard'
+            window.location.href = '/dashboard/student'
         }
       } else {
         toast.error(data.error || 'Login failed')

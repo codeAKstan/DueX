@@ -153,11 +153,11 @@ export default function SignupForm() {
                 
                 // Redirect based on role
                 if (data.user.role === 'admin') {
-                    window.location.href = '/admin/dashboard'
+                    window.location.href = '/dashboard/admin'
                 } else if (data.user.role === 'official') {
-                    window.location.href = '/official/dashboard'
+                    window.location.href = '/dashboard/official'
                 } else {
-                    window.location.href = '/student/dashboard'
+                    window.location.href = '/dashboard/student'
                 }
             } else {
                 toast.error(data.error || 'Failed to create account')
