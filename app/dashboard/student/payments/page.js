@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { CreditCard, Search, Download, Calendar, DollarSign, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import ProtectedRoute from "@/components/auth/protected-route"
 
 export default function StudentPayments() {
   const [payments, setPayments] = useState([])
@@ -190,3 +191,4 @@ export default function StudentPayments() {
     </DashboardLayout>
   )
 }
+

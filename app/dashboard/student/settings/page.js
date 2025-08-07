@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Settings, Lock, Bell, Shield, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
+import ProtectedRoute from "@/components/auth/protected-route"
 
 export default function StudentSettings() {
   const [settings, setSettings] = useState({

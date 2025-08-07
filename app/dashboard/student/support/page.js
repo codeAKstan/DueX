@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { HelpCircle, MessageSquare, Phone, Mail, Send, Loader2, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import ProtectedRoute from "@/components/auth/protected-route"
 
 export default function StudentSupport() {
   const [formData, setFormData] = useState({
@@ -216,3 +217,4 @@ export default function StudentSupport() {
     </DashboardLayout>
   )
 }
+

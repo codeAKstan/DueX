@@ -22,11 +22,8 @@ export default function StudentDashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token')
-      if (!token) {
-        window.location.href = '/login'
-        return
-      }
-
+      // Token existence is already verified by ProtectedRoute
+      
       const response = await fetch('/api/student/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -39,11 +36,6 @@ export default function StudentDashboard() {
       } else {
         const errorData = await response.json()
         setError(errorData.error || 'Failed to fetch dashboard data')
-        if (response.status === 401) {
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          window.location.href = '/login'
-        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { User, Mail, BookOpen, Hash, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
+import ProtectedRoute from "@/components/auth/protected-route"
 
 export default function StudentProfile() {
   const [profile, setProfile] = useState(null)
