@@ -24,7 +24,9 @@ import {
   Search,
   CreditCard,
   BarChart3,
-  UserCheck
+  UserCheck,
+  HelpCircle,
+
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -115,13 +117,27 @@ export default function DashboardLayout({ children, userType = "student", userNa
           ...baseItems,
           {
             name: 'Payment History',
-            href: '/dashboard/student/history',
+            href: '/dashboard/student/payments',
+
             icon: CreditCard,
             current: false
           },
           {
             name: 'Profile',
             href: '/dashboard/student/profile',
+            icon: Users,
+            current: false
+          },
+          {
+            name: 'Support',
+            href: '/dashboard/student/support',
+            icon: HelpCircle,
+            current: false
+
+          },
+          {
+            name: 'Settings',
+            href: '/dashboard/student/settings',
             icon: Settings,
             current: false
           }
