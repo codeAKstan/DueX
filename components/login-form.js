@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +16,7 @@ export default function LoginForm() {
     email: '',
     password: ''
   })
+  const router = useRouter()
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -46,19 +48,23 @@ export default function LoginForm() {
       const data = await response.json()
 
       if (response.ok) {
-        toast.success('Login successful!')
         // Store token and user data
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // Redirect based on role - FIXED ROUTES
-        if (data.user.role === 'admin') {
-            window.location.href = '/dashboard/admin'
-        } else if (data.user.role === 'official') {
-            window.location.href = '/dashboard/official'
-        } else {
-            window.location.href = '/dashboard/student'
-        }
+        toast.success('Login successful!')
+        
+        // Use setTimeout to ensure localStorage is written before redirect
+        setTimeout(() => {
+          // Redirect based on role using Next.js router
+          if (data.user.role === 'admin') {
+            router.push('/dashboard/admin')
+          } else if (data.user.role === 'official') {
+            router.push('/dashboard/official')
+          } else {
+            router.push('/dashboard/student')
+          }
+        }, 200)
       } else {
         toast.error(data.error || 'Login failed')
       }
@@ -102,7 +108,7 @@ export default function LoginForm() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="john.doe@university.edu"
+                  placeholder="john.doe@unn.edu.ng"
                 />
               </div>
               
@@ -149,18 +155,18 @@ export default function LoginForm() {
                 </div>
                 
                 <div className="text-sm">
-                  <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                  <Link href="#" className="font-medium text-blue-600 hover:text-blue-500">
                     Forgot your password?
                   </Link>
                 </div>
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full bg-purple-600 hover:bg-purple-700"
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={loading}
               >
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
             
@@ -170,17 +176,17 @@ export default function LoginForm() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or</span>
+                  <span className="px-2 bg-white text-gray-500">New to DueX?</span>
                 </div>
               </div>
               
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
-                  <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-                    Sign up
-                  </Link>
-                </p>
+              <div className="mt-6">
+                <Link
+                  href="/signup"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-gray-50 border-gray-300"
+                >
+                  Create an account
+                </Link>
               </div>
             </div>
           </CardContent>

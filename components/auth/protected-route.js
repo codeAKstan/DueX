@@ -12,7 +12,12 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
   const router = useRouter()
 
   useEffect(() => {
-    checkAuthentication()
+    // Wait a bit for localStorage to be available after page load
+    const timer = setTimeout(() => {
+      checkAuthentication()
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [])
 
   const checkAuthentication = async () => {
