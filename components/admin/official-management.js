@@ -16,6 +16,55 @@ export default function OfficialManagement() {
   const [officials, setOfficials] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  // Add the form state hooks here at the top level
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    department: '',
+    position: '',
+    password: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Move these functions here, before they're used in JSX
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+  
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          role: 'official',
+          password: formData.password || 'TempPassword123!'
+        })
+      })
+      
+      if (response.ok) {
+        // Success - refresh data and close dialog
+        await fetchData()
+        setFormData({ firstName: '', lastName: '', email: '', department: '', position: '', password: '' })
+        // Close dialog logic here
+      } else {
+        const error = await response.json()
+        console.error('Error creating official:', error)
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     fetchData()
@@ -80,16 +129,33 @@ export default function OfficialManagement() {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Full Name</Label>
-                  <Input placeholder="Enter full name" />
+                  <Label>First Name</Label>
+                  <Input 
+                    placeholder="Enter first name" 
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Last Name</Label>
+                  <Input 
+                    placeholder="Enter last name" 
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label>Email</Label>
-                  <Input type="email" placeholder="Enter email address" />
+                  <Input 
+                    type="email" 
+                    placeholder="Enter email address" 
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label>Department</Label>
-                  <Select>
+                  <Select value={formData.department} onValueChange={(value) => handleInputChange('department', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
@@ -104,9 +170,28 @@ export default function OfficialManagement() {
                 </div>
                 <div>
                   <Label>Position</Label>
-                  <Input placeholder="Enter position/title" />
+                  <Input 
+                    placeholder="Enter position/title" 
+                    value={formData.position}
+                    onChange={(e) => handleInputChange('position', e.target.value)}
+                  />
                 </div>
-                <Button className="w-full">Create Account</Button>
+                <div>
+                  <Label>Password</Label>
+                  <Input 
+                    type="password" 
+                    placeholder="Enter temporary password" 
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Account'}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -178,4 +263,6 @@ export default function OfficialManagement() {
       </div>
     </DashboardLayout>
   )
+  
+  // Remove the duplicate function definitions that are currently at the bottom of the file (lines 229-233 and beyond)
 }
