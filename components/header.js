@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, GraduationCap } from "lucide-react"
+import Image from "next/image"
+import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -24,7 +25,13 @@ export default function Header() {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
             <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-[#026432] to-green-600 rounded-lg">
-              <GraduationCap className="h-6 w-6 text-white" />
+              <Image 
+                src="/duex_logo.png" 
+                alt="DueX Logo" 
+                width={24} 
+                height={24} 
+                className="object-contain"
+              />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-[#026432] to-green-600 bg-clip-text text-transparent">
               DueX
@@ -70,7 +77,13 @@ export default function Header() {
                 <SheetTitle className="text-left">
                   <Link href="/" className="flex items-center space-x-2">
                     <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-[#026432] to-green-600 rounded-lg">
-                      <GraduationCap className="h-5 w-5 text-white" />
+                      <Image 
+                        src="/duex_logo.png" 
+                        alt="DueX Logo" 
+                        width={20} 
+                        height={20} 
+                        className="object-contain"
+                      />
                     </div>
                     <span className="text-xl font-bold bg-gradient-to-r from-[#026432] to-green-600 bg-clip-text text-transparent">
                       DueX
