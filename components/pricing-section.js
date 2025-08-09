@@ -55,7 +55,7 @@ export default function PricingSection() {
     <section id="pricing" className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-purple-600">Pricing</h2>
+          <h2 className="text-base font-semibold leading-7" style={{color: '#026432'}}>Pricing</h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Choose the right plan for your department
           </p>
@@ -70,13 +70,13 @@ export default function PricingSection() {
               key={plan.name}
               className={`relative rounded-3xl p-8 ring-1 ${
                 plan.popular
-                  ? 'ring-purple-600 bg-purple-50'
+                  ? 'ring-[#026432] bg-green-50'
                   : 'ring-gray-200 bg-white'
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="inline-flex items-center rounded-full bg-purple-600 px-4 py-1 text-sm font-medium text-white">
+                  <span className="inline-flex items-center rounded-full px-4 py-1 text-sm font-medium text-white" style={{backgroundColor: '#026432'}}>
                     Most Popular
                   </span>
                 </div>
@@ -104,7 +104,7 @@ export default function PricingSection() {
               <ul className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex gap-x-3">
-                    <Check className="h-6 w-5 flex-none text-purple-600" aria-hidden="true" />
+                    <Check className="h-6 w-5 flex-none" style={{color: '#026432'}} aria-hidden="true" />
                     {feature}
                   </li>
                 ))}
@@ -113,9 +113,10 @@ export default function PricingSection() {
               <Button
                 className={`mt-8 w-full ${
                   plan.popular
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'bg-white text-purple-600 ring-1 ring-purple-600 hover:bg-purple-50'
+                    ? 'text-white'
+                    : 'bg-white ring-1 ring-[#026432] hover:bg-green-50'
                 }`}
+                style={plan.popular ? {backgroundColor: '#026432', ':hover': {backgroundColor: '#024d28'}} : {color: '#026432'}}
                 variant={plan.popular ? 'default' : 'outline'}
               >
                 Get started with {plan.name}

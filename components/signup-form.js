@@ -174,7 +174,7 @@ export default function SignupForm() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-24">
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
-                    <h2 className="mt-6 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                    <h2 className="mt-6 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r" style={{backgroundImage: 'linear-gradient(to right, #026432, #059669)'}}>
                         Join <span>DueX</span>
                     </h2>
                     <p className="mt-2 text-sm text-gray-600">
@@ -191,9 +191,10 @@ export default function SignupForm() {
                             onClick={() => handleRoleChange('student')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                                 selectedRole === 'student'
-                                    ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg'
+                                    ? 'text-white shadow-lg'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
+                            style={selectedRole === 'student' ? {backgroundImage: 'linear-gradient(to bottom right, #026432, #059669)'} : {}}
                         >
                             Student
                         </button>
@@ -202,9 +203,10 @@ export default function SignupForm() {
                             onClick={() => handleRoleChange('official')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                                 selectedRole === 'official'
-                                    ? 'bg-purple-600 text-white shadow-lg'
+                                    ? 'text-white shadow-lg'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
+                            style={selectedRole === 'official' ? {backgroundColor: '#026432'} : {}}
                         >
                             Official
                         </button>
@@ -242,7 +244,7 @@ export default function SignupForm() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-center space-y-4">
-                                    <div className="p-6 bg-purple-50 rounded-lg">
+                                    <div className="p-6 bg-green-50 rounded-lg">
                                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                                             Contact Admin for Official Access
                                         </h3>
@@ -250,7 +252,7 @@ export default function SignupForm() {
                                             If you are an official, please contact the administrator to get your account set up with the appropriate permissions.
                                         </p>
                                         <Button 
-                                            className="bg-purple-600 hover:bg-purple-700"
+                                            className="bg-[#026432] hover:bg-[#024d28"
                                             onClick={() => window.location.href = '/contact'}
                                         >
                                             Contact Admin
@@ -261,7 +263,7 @@ export default function SignupForm() {
                                         <button
                                             type="button"
                                             onClick={() => handleRoleChange('student')}
-                                            className="text-purple-600 hover:text-purple-500 font-medium"
+                                            className="text-[#026432] hover:text-[#024d28] font-medium"
                                         >
                                             Switch to Student Registration
                                         </button>
@@ -453,7 +455,7 @@ export default function SignupForm() {
 
                                     <Button 
                                         type="submit" 
-                                        className="w-full bg-purple-600 hover:bg-purple-700"
+                                        className="w-full bg-[#026432] hover:bg-[#024d28]"
                                         disabled={loading}
                                     >
                                         {loading ? 'Creating Account...' : 'Create Account'}
@@ -463,7 +465,7 @@ export default function SignupForm() {
                                 <div className="mt-6 text-center">
                                     <p className="text-sm text-gray-600">
                                         Already have an account?{' '}
-                                        <Link href="/login" className="font-medium text-purple-600 hover:text-purple-500">
+                                        <Link href="/login" className="font-medium text-[#026432] hover:text-[#024d28]">
                                             Sign in
                                         </Link>
                                     </p>

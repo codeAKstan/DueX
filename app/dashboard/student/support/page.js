@@ -109,7 +109,7 @@ export default function StudentSupport() {
               </div>
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
-                  <Mail className="h-5 w-5 text-green-600" />
+                  <MessageSquare className="h-5 w-5" style={{color: '#026432'}} />
                 </div>
                 <div>
                   <p className="font-medium">Email Support</p>
@@ -156,7 +156,8 @@ export default function StudentSupport() {
                     name="priority"
                     value={formData.priority}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                    style={{'&:focus': {ringColor: '#026432'}}}
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>

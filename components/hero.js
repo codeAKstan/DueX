@@ -3,13 +3,13 @@ import { ArrowRight, Play } from "lucide-react"
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-20">
+    <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 pt-20">
       <div className="absolute inset-0 bg-[url('/placeholder.svg?height=800&width=1200')] opacity-10"></div>
       <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
             Modernize Your
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
               {" "}
               Departmental Dues
             </span>
@@ -19,7 +19,7 @@ export default function Hero() {
             by 90%, and provide transparency for students and department officials.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3">
+            <Button size="lg" className="text-white px-8 py-3" style={{backgroundColor: '#026432', ':hover': {backgroundColor: '#024d28'}}}>
               Get Started Free
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

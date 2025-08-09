@@ -55,7 +55,7 @@ export default function ContactSection() {
                 return (
                   <div key={item.title} className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
-                      <Icon className="h-6 w-6 text-purple-600" />
+                      <Icon className="h-6 w-6" style={{color: '#026432'}} />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900">
@@ -73,7 +73,7 @@ export default function ContactSection() {
               })}
             </div>
             
-            <div className="mt-8 p-6 bg-purple-50 rounded-lg">
+            <div className="mt-8 p-6 bg-green-50 rounded-lg">
               <h4 className="text-sm font-semibold text-gray-900 mb-2">
                 Need immediate help?
               </h4>
@@ -155,7 +155,7 @@ export default function ContactSection() {
                 />
               </div>
               
-              <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
+              <Button type="submit" className="w-full text-white" style={{backgroundColor: '#026432', ':hover': {backgroundColor: '#024d28'}}}>
                 Send message
               </Button>
             </form>

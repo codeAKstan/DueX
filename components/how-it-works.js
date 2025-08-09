@@ -38,7 +38,7 @@ export default function HowItWorks() {
             {steps.map((step, index) => (
               <div key={step.step} className="relative">
                 <div className="flex flex-col items-center text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-600 text-white font-bold text-lg mb-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full text-white font-bold text-lg mb-4" style={{backgroundColor: '#026432'}}>
                     {step.step}
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">{step.title}</h3>
@@ -46,7 +46,7 @@ export default function HowItWorks() {
                 </div>
                 {index < steps.length - 1 && (
                   <div className="hidden lg:block absolute top-8 left-full w-full">
-                    <ArrowRight className="h-6 w-6 text-purple-400 mx-auto" />
+                    <ArrowRight className="h-6 w-6 text-green-400 mx-auto" />
                   </div>
                 )}
               </div>

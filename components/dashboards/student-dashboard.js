@@ -120,7 +120,7 @@ export default function StudentDashboard() {
 
         {/* Current Due Status */}
         {currentDue ? (
-          <Card className="border-l-4 border-l-purple-600">
+          <Card className="border-l-4" style={{borderLeftColor: '#026432'}}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center space-x-2">

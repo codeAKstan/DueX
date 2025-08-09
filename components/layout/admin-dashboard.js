@@ -317,8 +317,8 @@ export default function AdminDashboard() {
                   {systemData.officials.map((official) => (
                     <div key={official.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
-                        <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                          <UserPlus className="h-5 w-5 text-blue-600" />
+                        <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
+                          <Building2 className="h-5 w-5" style={{color: '#026432'}} />
                         </div>
                         <div>
                           <p className="font-semibold">{official.name}</p>

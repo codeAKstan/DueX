@@ -116,7 +116,8 @@ export default function StudentPayments() {
                   id="status"
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                  style={{'&:focus': {ringColor: '#026432'}}}
                 >
                   <option value="all">All Status</option>
                   <option value="paid">Paid</option>
@@ -142,7 +143,7 @@ export default function StudentPayments() {
                 {filteredPayments.map((payment) => (
                   <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
+                      <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
                         {getStatusIcon(payment.status)}
                       </div>
                       <div>

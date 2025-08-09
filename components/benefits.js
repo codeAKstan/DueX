@@ -51,8 +51,8 @@ export default function Benefits() {
           {userBenefits.map((user) => (
             <Card key={user.title} className="border-0 shadow-lg">
               <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
-                  <user.icon className="h-6 w-6 text-purple-600" />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+                  <user.icon className="h-6 w-6" style={{color: '#026432'}} />
                 </div>
                 <CardTitle className="text-xl font-semibold">{user.title}</CardTitle>
               </CardHeader>
@@ -60,7 +60,7 @@ export default function Benefits() {
                 <ul className="space-y-3">
                   {user.benefits.map((benefit, index) => (
                     <li key={index} className="flex items-start">
-                      <div className="flex-shrink-0 w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3"></div>
+                      <div className="flex-shrink-0 w-2 h-2 rounded-full mt-2 mr-3" style={{backgroundColor: '#026432'}}></div>
                       <span className="text-gray-600">{benefit}</span>
                     </li>
                   ))}
