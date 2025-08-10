@@ -18,9 +18,19 @@ export default function DepartmentManagement() {
   const [officials, setOfficials] = useState([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editingDepartment, setEditingDepartment] = useState(null)
   const [formData, setFormData] = useState({
     departmentName: '',
+    departmentCode: '',
+    faculty: '',
+    officialId: ''
+  })
+  const [editFormData, setEditFormData] = useState({
+    departmentName: '',
+    departmentCode: '',
+    faculty: '',
     officialId: ''
   })
 
@@ -80,6 +90,86 @@ export default function DepartmentManagement() {
       ...prev,
       officialId: value
     }))
+  }
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleEditSelectChange = (value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      officialId: value === 'none' ? '' : value
+    }))
+  }
+
+  const handleEditDepartment = (department) => {
+    setEditingDepartment(department)
+    const officialId = department.official && department.official !== 'Not Assigned' ? 
+      officials.find(o => o.name === department.official)?.id || '' : ''
+    
+    setEditFormData({
+      departmentName: department.name,
+      departmentCode: department.code || '',
+      faculty: department.faculty || '',
+      officialId: officialId || 'none'
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!editFormData.departmentName.trim()) {
+      toast.error('Department name is required')
+      return
+    }
+  
+    setIsSubmitting(true)
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/departments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          departmentId: editingDepartment.id,
+          departmentName: editFormData.departmentName,
+          departmentCode: editFormData.departmentCode,
+          faculty: editFormData.faculty,
+          officialId: editFormData.officialId
+        })
+      })
+  
+      const data = await response.json()
+  
+      if (response.ok) {
+        toast.success('Department updated successfully')
+        setEditFormData({ 
+          departmentName: '', 
+          departmentCode: '', 
+          faculty: '', 
+          officialId: '' 
+        })
+        setIsEditDialogOpen(false)
+        setEditingDepartment(null)
+        fetchDepartments() // Refresh the departments list
+      } else {
+        toast.error(data.error || 'Failed to update department')
+      }
+    } catch (error) {
+      console.error('Error updating department:', error)
+      toast.error('Failed to update department')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -217,6 +307,64 @@ export default function DepartmentManagement() {
           </Dialog>
         </div>
 
+        {/* Edit Department Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Department</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <Label>Department Name</Label>
+                <Input 
+                  name="departmentName"
+                  value={editFormData.departmentName}
+                  onChange={handleEditInputChange}
+                  placeholder="Enter department name" 
+                  required
+                />
+              </div>
+              <div>
+                <Label>Department Code (Optional)</Label>
+                <Input 
+                  name="departmentCode"
+                  value={editFormData.departmentCode}
+                  onChange={handleEditInputChange}
+                  placeholder="Enter department code (e.g., CSC, EEE)" 
+                />
+              </div>
+              <div>
+                <Label>Faculty (Optional)</Label>
+                <Input 
+                  name="faculty"
+                  value={editFormData.faculty}
+                  onChange={handleEditInputChange}
+                  placeholder="Enter faculty name" 
+                />
+              </div>
+              <div>
+                <Label>Assign Official (Optional)</Label>
+                <Select value={editFormData.officialId} onValueChange={handleEditSelectChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select official" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Official</SelectItem>
+                    {officials.map((official) => (
+                      <SelectItem key={official.id} value={official.id}>
+                        {official.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Updating...' : 'Update Department'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         {/* Search */}
         <div className="flex justify-between items-center">
           <div className="relative w-96">
@@ -246,7 +394,11 @@ export default function DepartmentManagement() {
                     </div>
                   </div>
                   <div className="flex space-x-1">
-                    <Button size="sm" variant="ghost">
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => handleEditDepartment(department)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="ghost" className="text-red-600">

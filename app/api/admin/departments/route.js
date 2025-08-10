@@ -148,3 +148,120 @@ export async function POST(request) {
     )
   }
 }
+
+// PUT - Update department
+export async function PUT(request) {
+  try {
+    const admin = await requireAdmin(request)
+    await connectDB()
+    
+    const { departmentId, departmentName, departmentCode, faculty, officialId } = await request.json()
+    
+    if (!departmentId) {
+      return NextResponse.json(
+        { error: 'Department ID is required' },
+        { status: 400 }
+      )
+    }
+    
+    if (!departmentName) {
+      return NextResponse.json(
+        { error: 'Department name is required' },
+        { status: 400 }
+      )
+    }
+    
+    // Find the department to update
+    const department = await Department.findById(departmentId)
+    if (!department) {
+      return NextResponse.json(
+        { error: 'Department not found' },
+        { status: 404 }
+      )
+    }
+    
+    // Check if department name already exists (excluding current department)
+    const existingDept = await Department.findOne({ 
+      name: { $regex: new RegExp(`^${departmentName}$`, 'i') },
+      _id: { $ne: departmentId },
+      isActive: true 
+    })
+    
+    if (existingDept) {
+      return NextResponse.json(
+        { error: 'Department name already exists' },
+        { status: 400 }
+      )
+    }
+    
+    // Check if department code already exists (if provided, excluding current department)
+    if (departmentCode) {
+      const existingCode = await Department.findOne({ 
+        code: { $regex: new RegExp(`^${departmentCode}$`, 'i') },
+        _id: { $ne: departmentId },
+        isActive: true 
+      })
+      
+      if (existingCode) {
+        return NextResponse.json(
+          { error: 'Department code already exists' },
+          { status: 400 }
+        )
+      }
+    }
+    
+    // Validate official if provided
+    if (officialId) {
+      const official = await User.findById(officialId)
+      if (!official || official.role !== 'official') {
+        return NextResponse.json(
+          { error: 'Invalid official selected' },
+          { status: 400 }
+        )
+      }
+    }
+    
+    // Remove previous official assignment if exists
+    if (department.official && department.official.toString() !== officialId) {
+      await User.findByIdAndUpdate(department.official, {
+        $unset: { department: 1 }
+      })
+    }
+    
+    // Update department
+    const updatedDepartment = await Department.findByIdAndUpdate(
+      departmentId,
+      {
+        name: departmentName,
+        code: departmentCode,
+        faculty,
+        official: officialId || null
+      },
+      { new: true }
+    )
+    
+    // Update official's department if assigned
+    if (officialId) {
+      await User.findByIdAndUpdate(officialId, {
+        department: departmentName
+      })
+    }
+    
+    return NextResponse.json({ 
+      message: 'Department updated successfully',
+      department: {
+        id: updatedDepartment._id,
+        name: updatedDepartment.name,
+        code: updatedDepartment.code,
+        faculty: updatedDepartment.faculty
+      }
+    })
+    
+  } catch (error) {
+    console.error('Error updating department:', error)
+    return NextResponse.json(
+      { error: 'Failed to update department' },
+      { status: 500 }
+    )
+  }
+}
