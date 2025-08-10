@@ -187,12 +187,12 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <Dialog>
-                      <DialogTrigger asChild>
+                      {/* <DialogTrigger asChild>
                         <Button>
                           <Plus className="h-4 w-4 mr-2" />
                           Add Department
                         </Button>
-                      </DialogTrigger>
+                      </DialogTrigger> */}
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Add New Department</DialogTitle>
@@ -243,14 +243,14 @@ export default function AdminDashboard() {
                           <Badge className="bg-green-100 text-green-800">{department.status}</Badge>
                           <p className="text-xs text-gray-500 mt-1">{department.students} students</p>
                         </div>
-                        <div className="flex space-x-2">
+                        {/* <div className="flex space-x-2">
                           <Button size="sm" variant="ghost">
                             <Edit className="h-3 w-3" />
                           </Button>
                           <Button size="sm" variant="ghost" className="text-red-600">
                             <Trash2 className="h-3 w-3" />
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ))}
@@ -266,12 +266,12 @@ export default function AdminDashboard() {
                 <div className="flex justify-between items-center">
                   <CardTitle>Official Accounts</CardTitle>
                   <Dialog>
-                    <DialogTrigger asChild>
+                    {/* <DialogTrigger asChild>
                       <Button>
                         <UserPlus className="h-4 w-4 mr-2" />
                         Create Official Account
                       </Button>
-                    </DialogTrigger>
+                    </DialogTrigger> */}
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Create Official Account</DialogTitle>
@@ -331,14 +331,14 @@ export default function AdminDashboard() {
                             Last login: {new Date(official.lastLogin).toLocaleDateString()}
                           </p>
                         </div>
-                        <div className="flex space-x-2">
+                        {/* <div className="flex space-x-2">
                           <Button size="sm" variant="ghost">
                             <Edit className="h-3 w-3" />
                           </Button>
                           <Button size="sm" variant="ghost" className="text-red-600">
                             <Trash2 className="h-3 w-3" />
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ))}
