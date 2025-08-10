@@ -32,7 +32,7 @@ export default function DepartmentManagement() {
   const fetchDepartments = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/admin/dashboard', {
+      const response = await fetch('/api/admin/departments', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
