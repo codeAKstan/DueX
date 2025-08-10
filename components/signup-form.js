@@ -16,6 +16,8 @@ export default function SignupForm() {
     const [emailError, setEmailError] = useState('')
     const [loading, setLoading] = useState(false)
     const [adminExists, setAdminExists] = useState(false)
+    const [departments, setDepartments] = useState([])
+    const [loadingDepartments, setLoadingDepartments] = useState(true)
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -28,9 +30,10 @@ export default function SignupForm() {
         role: 'student'
     })
 
-    // Check if admin exists on component mount
+    // Check if admin exists and fetch departments on component mount
     useEffect(() => {
         checkAdminExists()
+        fetchDepartments()
     }, [])
 
     const checkAdminExists = async () => {
@@ -43,29 +46,19 @@ export default function SignupForm() {
         }
     }
 
-    // List of departments
-    const departments = [
-        'Computer Science',
-        'Electrical Engineering',
-        'Mechanical Engineering',
-        'Civil Engineering',
-        'Chemical Engineering',
-        'Mathematics',
-        'Physics',
-        'Chemistry',
-        'Biology',
-        'Economics',
-        'Business Administration',
-        'Accounting',
-        'Political Science',
-        'Psychology',
-        'English Language',
-        'Mass Communication',
-        'Law',
-        'Medicine',
-        'Pharmacy',
-        'Architecture'
-    ]
+    const fetchDepartments = async () => {
+        try {
+            const response = await fetch('/api/admin/departments')
+            const data = await response.json()
+            setDepartments(data.departments || [])
+        } catch (error) {
+            console.error('Error fetching departments:', error)
+            // Fallback to default departments if API fails
+            setDepartments(['Computer Science'])
+        } finally {
+            setLoadingDepartments(false)
+        }
+    }
 
     const validateEmail = (email) => {
         const emailRegex = /^[a-zA-Z0-9._%+-]+@unn\.edu\.ng$/
@@ -369,8 +362,8 @@ export default function SignupForm() {
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {departments.map((dept) => (
-                                                            <SelectItem key={dept} value={dept}>
-                                                                {dept}
+                                                            <SelectItem key={dept.id} value={dept.name}>
+                                                                {dept.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>

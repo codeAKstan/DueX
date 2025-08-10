@@ -10,12 +10,19 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Building2, Plus, Edit, Trash2, Search, Users, DollarSign } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function DepartmentManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [departments, setDepartments] = useState([])
   const [officials, setOfficials] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    departmentName: '',
+    officialId: ''
+  })
 
   useEffect(() => {
     fetchDepartments()
@@ -60,6 +67,70 @@ export default function DepartmentManagement() {
     }
   }
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSelectChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      officialId: value
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!formData.departmentName.trim()) {
+      toast.error('Department name is required')
+      return
+    }
+  
+    setIsSubmitting(true)
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/departments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          departmentName: formData.departmentName,
+          departmentCode: formData.departmentCode, // Add this field
+          faculty: formData.faculty, // Add this field
+          officialId: formData.officialId
+        })
+      })
+  
+      const data = await response.json()
+  
+      if (response.ok) {
+        toast.success('Department created successfully')
+        setFormData({ 
+          departmentName: '', 
+          departmentCode: '', 
+          faculty: '', 
+          officialId: '' 
+        })
+        setIsDialogOpen(false)
+        fetchDepartments() // Refresh the departments list
+      } else {
+        toast.error(data.error || 'Failed to create department')
+      }
+    } catch (error) {
+      console.error('Error creating department:', error)
+      toast.error('Failed to create department')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -83,7 +154,7 @@ export default function DepartmentManagement() {
             <h1 className="text-3xl font-bold text-gray-900">Department Management</h1>
             <p className="text-gray-600">Manage university departments and their officials</p>
           </div>
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -94,14 +165,38 @@ export default function DepartmentManagement() {
               <DialogHeader>
                 <DialogTitle>Add New Department</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label>Department Name</Label>
-                  <Input placeholder="Enter department name" />
+                  <Input 
+                    name="departmentName"
+                    value={formData.departmentName}
+                    onChange={handleInputChange}
+                    placeholder="Enter department name" 
+                    required
+                  />
                 </div>
                 <div>
-                  <Label>Assign Official</Label>
-                  <Select>
+                  <Label>Department Code (Optional)</Label>
+                  <Input 
+                    name="departmentCode"
+                    value={formData.departmentCode}
+                    onChange={handleInputChange}
+                    placeholder="Enter department code (e.g., CSC, EEE)" 
+                  />
+                </div>
+                <div>
+                  <Label>Faculty (Optional)</Label>
+                  <Input 
+                    name="faculty"
+                    value={formData.faculty}
+                    onChange={handleInputChange}
+                    placeholder="Enter faculty name" 
+                  />
+                </div>
+                <div>
+                  <Label>Assign Official (Optional)</Label>
+                  <Select value={formData.officialId} onValueChange={handleSelectChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select official" />
                     </SelectTrigger>
@@ -114,8 +209,10 @@ export default function DepartmentManagement() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button className="w-full">Create Department</Button>
-              </div>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Department'}
+                </Button>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
