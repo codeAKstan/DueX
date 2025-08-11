@@ -58,22 +58,27 @@ export async function GET(request) {
       students.map(async (student) => {
         const payment = currentDue ? await Payment.findOne({
           studentId: student._id,
-          session: currentDue.session,
-          status: 'paid'
-        }) : null
+          session: currentDue.session
+        }).sort({ createdAt: -1 }) : null
 
-        const isOverdue = currentDue && new Date() > new Date(currentDue.deadline) && !payment
+        let status = 'unpaid'
+        if (payment) {
+          status = payment.status // 'paid', 'pending', or 'failed'
+        }
+
+        const isOverdue = currentDue && new Date() > new Date(currentDue.deadline) && status !== 'paid'
 
         return {
           id: student._id,
           name: `${student.firstName} ${student.lastName}`,
           studentId: student.regNo,
           email: student.email,
-          status: payment ? 'paid' : 'unpaid',
+          status,
           isOverdue,
-          amountPaid: payment ? payment.amount : 0,
-          datePaid: payment ? payment.datePaid : null,
-          joinedDate: student.createdAt
+          amountPaid: payment && payment.status === 'paid' ? payment.amount : 0,
+          datePaid: payment && payment.status === 'paid' ? payment.datePaid : null,
+          joinedDate: student.createdAt,
+          paymentId: payment ? payment._id : null
         }
       })
     )
@@ -84,6 +89,8 @@ export async function GET(request) {
       filteredStudents = studentsWithPayments.filter(s => s.status === 'paid')
     } else if (filter === 'unpaid') {
       filteredStudents = studentsWithPayments.filter(s => s.status === 'unpaid')
+    } else if (filter === 'pending') {
+      filteredStudents = studentsWithPayments.filter(s => s.status === 'pending')
     } else if (filter === 'overdue') {
       filteredStudents = studentsWithPayments.filter(s => s.isOverdue)
     }
@@ -93,6 +100,7 @@ export async function GET(request) {
       total: studentsWithPayments.length,
       paid: studentsWithPayments.filter(s => s.status === 'paid').length,
       unpaid: studentsWithPayments.filter(s => s.status === 'unpaid').length,
+      pending: studentsWithPayments.filter(s => s.status === 'pending').length,
       overdue: studentsWithPayments.filter(s => s.isOverdue).length
     }
 
@@ -100,17 +108,17 @@ export async function GET(request) {
       students: filteredStudents,
       stats,
       currentDue: currentDue ? {
+        session: currentDue.session,
         amount: currentDue.amount,
-        description: currentDue.description,
         deadline: currentDue.deadline,
-        session: currentDue.session
+        description: currentDue.description
       } : null
     })
-    
+
   } catch (error) {
-    console.error('Students data fetch error:', error)
+    console.error('Students fetch error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch students data' },
+      { error: 'Failed to fetch students' },
       { status: 500 }
     )
   }

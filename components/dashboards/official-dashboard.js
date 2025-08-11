@@ -403,7 +403,7 @@ export default function OfficialDashboard() {
                             </p>
                           )}
                         </div>
-                        <div className="flex space-x-2">
+                        {/* <div className="flex space-x-2">
                           <Button size="sm" variant="ghost">
                             <Eye className="h-3 w-3" />
                           </Button>
@@ -416,7 +416,7 @@ export default function OfficialDashboard() {
                               Confirm Payment
                             </Button>
                           )}
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ))}
