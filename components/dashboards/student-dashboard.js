@@ -15,6 +15,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [markingPaid, setMarkingPaid] = useState(false)
+  const [downloadingReceipt, setDownloadingReceipt] = useState(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -101,6 +102,39 @@ export default function StudentDashboard() {
     setCopied(true)
     toast.success('Account number copied to clipboard!')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const downloadReceipt = async (paymentId, reference) => {
+    try {
+      setDownloadingReceipt(paymentId)
+      const token = localStorage.getItem('token')
+      
+      const response = await fetch(`/api/student/payments/${paymentId}/receipt`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `receipt-${reference}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        toast.success('Receipt downloaded successfully')
+      } else {
+        toast.error('Failed to download receipt')
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error)
+      toast.error('Failed to download receipt')
+    } finally {
+      setDownloadingReceipt(null)
+    }
   }
 
   if (loading) {
@@ -356,10 +390,25 @@ export default function StudentDashboard() {
                           }`}>
                             ₦{payment.amount.toLocaleString()}
                           </p>
+                          // In the payment history section, update the download button:
                           {payment.status === 'paid' && (
-                            <Button size="sm" variant="ghost">
-                              <Download className="h-3 w-3 mr-1" />
-                              Receipt
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => downloadReceipt(payment.id, payment.reference)}
+                              disabled={downloadingReceipt === payment.id}
+                            >
+                              {downloadingReceipt === payment.id ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                  Downloading...
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Receipt
+                                </>
+                              )}
                             </Button>
                           )}
                         </div>

@@ -16,6 +16,7 @@ export default function StudentPayments() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [downloadingReceipt, setDownloadingReceipt] = useState(null)
 
   useEffect(() => {
     fetchPayments()
@@ -46,6 +47,39 @@ export default function StudentPayments() {
       toast.error('Failed to fetch payments')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const downloadReceipt = async (paymentId, reference) => {
+    try {
+      setDownloadingReceipt(paymentId)
+      const token = localStorage.getItem('token')
+      
+      const response = await fetch(`/api/student/payments/${paymentId}/receipt`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `receipt-${reference}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        toast.success('Receipt downloaded successfully')
+      } else {
+        toast.error('Failed to download receipt')
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error)
+      toast.error('Failed to download receipt')
+    } finally {
+      setDownloadingReceipt(null)
     }
   }
 
@@ -141,7 +175,7 @@ export default function StudentPayments() {
             {filteredPayments.length > 0 ? (
               <div className="space-y-4">
                 {filteredPayments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div key={payment._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
                         {getStatusIcon(payment.status)}
@@ -161,9 +195,23 @@ export default function StudentPayments() {
                       </Badge>
                       {payment.status === 'paid' && (
                         <div>
-                          <Button size="sm" variant="ghost">
-                            <Download className="h-3 w-3 mr-1" />
-                            Receipt
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => downloadReceipt(payment._id, payment.reference)}
+                            disabled={downloadingReceipt === payment._id}
+                          >
+                            {downloadingReceipt === payment._id ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-3 w-3 mr-1" />
+                                Receipt
+                              </>
+                            )}
                           </Button>
                         </div>
                       )}
