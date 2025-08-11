@@ -59,6 +59,12 @@ export default function DashboardLayout({ children, userType = "student", userNa
         return [
           ...baseItems,
           {
+            name: 'Users',
+            href: '/dashboard/admin/users',
+            icon: Users,
+            current: false
+          },
+          {
             name: 'Departments',
             href: '/dashboard/admin/departments',
             icon: Building2,
