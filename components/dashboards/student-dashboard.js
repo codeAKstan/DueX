@@ -14,6 +14,7 @@ export default function StudentDashboard() {
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [markingPaid, setMarkingPaid] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
@@ -45,9 +46,40 @@ export default function StudentDashboard() {
     }
   }
 
+  const handleMarkAsPaid = async () => {
+    try {
+      setMarkingPaid(true)
+      const token = localStorage.getItem('token')
+      
+      const response = await fetch('/api/student/mark-paid', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(data.message)
+        // Refresh dashboard data to show updated status
+        await fetchDashboardData()
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to mark payment as paid')
+      }
+    } catch (error) {
+      console.error('Error marking payment as paid:', error)
+      toast.error('Failed to mark payment as paid')
+    } finally {
+      setMarkingPaid(false)
+    }
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case "paid": return "bg-green-100 text-green-800"
+      case "pending": return "bg-blue-100 text-blue-800"
       case "unpaid": return "bg-yellow-100 text-yellow-800"
       case "overdue": return "bg-red-100 text-red-800"
       default: return "bg-gray-100 text-gray-800"
@@ -57,6 +89,7 @@ export default function StudentDashboard() {
   const getStatusIcon = (status) => {
     switch (status) {
       case "paid": return <CheckCircle className="h-4 w-4" />
+      case "pending": return <Clock className="h-4 w-4" />
       case "unpaid": return <Clock className="h-4 w-4" />
       case "overdue": return <AlertCircle className="h-4 w-4" />
       default: return <Clock className="h-4 w-4" />
@@ -151,6 +184,43 @@ export default function StudentDashboard() {
                   </p>
                 </div>
               </div>
+              
+              {/* Payment Action Buttons */}
+              {currentStatus === "unpaid" || currentStatus === "overdue" ? (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-blue-900">Ready to pay?</h4>
+                      <p className="text-sm text-blue-700">Click the button below after making your payment</p>
+                    </div>
+                    <Button 
+                      onClick={handleMarkAsPaid}
+                      disabled={markingPaid}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {markingPaid ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Processing...
+                        </>
+                      ) : (
+                        'I have paid'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : currentStatus === "pending" ? (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <h4 className="font-semibold text-blue-900">Payment Pending Confirmation</h4>
+                      <p className="text-sm text-blue-700">Your payment has been marked as paid and is awaiting official confirmation.</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              
               {currentStatus === "overdue" && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-red-800 text-sm">
@@ -229,6 +299,7 @@ export default function StudentDashboard() {
                       <ul className="text-sm text-yellow-800 space-y-1">
                         <li>• Use your Student ID ({student.studentId}) as payment reference</li>
                         <li>• Keep your payment receipt/teller for verification</li>
+                        <li>• Click "I have paid" button after making the payment</li>
                         <li>• Payment confirmation may take 24-48 hours after verification</li>
                         <li>• Contact the department office if payment is not reflected after 48 hours</li>
                       </ul>
@@ -256,21 +327,41 @@ export default function StudentDashboard() {
                     {paymentHistory.map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
-                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                            payment.status === 'paid' ? 'bg-green-100' : 
+                            payment.status === 'pending' ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            {payment.status === 'paid' ? (
+                              <CheckCircle className="h-5 w-5 text-green-600" />
+                            ) : payment.status === 'pending' ? (
+                              <Clock className="h-5 w-5 text-blue-600" />
+                            ) : (
+                              <AlertCircle className="h-5 w-5 text-gray-600" />
+                            )}
                           </div>
                           <div>
                             <p className="font-semibold">{payment.session}</p>
-                            <p className="text-sm text-gray-600">Paid on {new Date(payment.datePaid).toLocaleDateString()}</p>
+                            <p className="text-sm text-gray-600">
+                              {payment.status === 'paid' ? `Paid on ${new Date(payment.datePaid).toLocaleDateString()}` :
+                               payment.status === 'pending' ? 'Pending confirmation' :
+                               'Payment failed'}
+                            </p>
                             <p className="text-xs text-gray-500">Ref: {payment.reference}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-green-600">₦{payment.amount.toLocaleString()}</p>
-                          <Button size="sm" variant="ghost">
-                            <Download className="h-3 w-3 mr-1" />
-                            Receipt
-                          </Button>
+                          <p className={`font-bold ${
+                            payment.status === 'paid' ? 'text-green-600' :
+                            payment.status === 'pending' ? 'text-blue-600' : 'text-gray-600'
+                          }`}>
+                            ₦{payment.amount.toLocaleString()}
+                          </p>
+                          {payment.status === 'paid' && (
+                            <Button size="sm" variant="ghost">
+                              <Download className="h-3 w-3 mr-1" />
+                              Receipt
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

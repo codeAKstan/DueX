@@ -40,21 +40,23 @@ export async function GET(request) {
     if (currentDue) {
       const existingPayment = await Payment.findOne({
         studentId: student._id,
-        session: currentDue.session,
-        status: 'paid'
-      })
+        session: currentDue.session
+      }).sort({ createdAt: -1 })
       
       if (existingPayment) {
-        paymentStatus = 'paid'
+        if (existingPayment.status === 'paid') {
+          paymentStatus = 'paid'
+        } else if (existingPayment.status === 'pending') {
+          paymentStatus = 'pending'
+        }
       } else if (new Date() > new Date(currentDue.deadline)) {
         paymentStatus = 'overdue'
       }
     }
     
-    // Get payment history
+    // Get payment history (including pending payments)
     const paymentHistory = await Payment.find({
-      studentId: student._id,
-      status: 'paid'
+      studentId: student._id
     }).sort({ datePaid: -1 })
     
     // Get bank details for department
