@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { Settings, Save, CreditCard, Bell, User, Shield } from 'lucide-react'
+import { Settings, Save, CreditCard, Bell, User, Shield, Loader2, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function OfficialSettings() {
   const [settings, setSettings] = useState({
@@ -21,9 +22,84 @@ export default function OfficialSettings() {
     paymentReminders: true,
     autoConfirmation: false
   })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [department, setDepartment] = useState("")
 
-  const handleSave = () => {
-    console.log('Saving settings:', settings)
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/official/settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.bankDetails) {
+          setSettings(prev => ({
+            ...prev,
+            bankName: data.bankDetails.bankName || "",
+            accountNumber: data.bankDetails.accountNumber || "",
+            accountName: data.bankDetails.accountName || ""
+          }))
+        }
+        setDepartment(data.department)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to load settings')
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+      toast.error('Failed to load settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/official/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          bankName: settings.bankName,
+          accountNumber: settings.accountNumber,
+          accountName: settings.accountName
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Bank details saved successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to save settings')
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      toast.error('Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout userType="official" userName="Department Official">
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -34,10 +110,17 @@ export default function OfficialSettings() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Department Settings</h1>
             <p className="text-gray-600">Manage your department configuration and preferences</p>
+            {department && (
+              <p className="text-sm text-blue-600 font-medium">Department: {department}</p>
+            )}
           </div>
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
 
@@ -56,37 +139,67 @@ export default function OfficialSettings() {
                   <CreditCard className="h-5 w-5 mr-2" />
                   Bank Account Information
                 </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Students in your department will see these details for making payments
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Label htmlFor="bankName">Bank Name *</Label>
                     <Input
                       id="bankName"
                       value={settings.bankName}
                       onChange={(e) => setSettings({...settings, bankName: e.target.value})}
                       placeholder="Enter bank name"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Label htmlFor="accountNumber">Account Number *</Label>
                     <Input
                       id="accountNumber"
                       value={settings.accountNumber}
                       onChange={(e) => setSettings({...settings, accountNumber: e.target.value})}
                       placeholder="Enter account number"
+                      required
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="accountName">Account Name</Label>
+                  <Label htmlFor="accountName">Account Name *</Label>
                   <Input
                     id="accountName"
                     value={settings.accountName}
                     onChange={(e) => setSettings({...settings, accountName: e.target.value})}
                     placeholder="Enter account name"
+                    required
                   />
                 </div>
+                
+                {/* Preview Section */}
+                {settings.bankName && settings.accountNumber && settings.accountName && (
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Student View Preview
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Bank Name:</span>
+                        <span className="font-medium">{settings.bankName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Account Number:</span>
+                        <span className="font-mono font-medium">{settings.accountNumber}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Account Name:</span>
+                        <span className="font-medium">{settings.accountName}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -169,7 +282,7 @@ export default function OfficialSettings() {
                 </div>
                 <div>
                   <Label htmlFor="department">Department</Label>
-                  <Input id="department" placeholder="Department name" disabled />
+                  <Input id="department" value={department} disabled />
                 </div>
                 <div>
                   <Label htmlFor="position">Position</Label>
