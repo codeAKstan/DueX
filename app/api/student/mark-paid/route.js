@@ -22,21 +22,25 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
     
+    // Get request body
+    const { dueId, session } = await request.json()
+    
     // Find the student
     const student = await User.findById(decoded.userId)
     if (!student || student.role !== 'student') {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
     
-    // Get current active due for student's department
-    const currentDue = await Due.findOne({
+    // Get the specific due
+    const specificDue = await Due.findOne({
+      _id: dueId,
       department: student.department,
       isActive: true
-    }).sort({ createdAt: -1 })
+    })
     
-    if (!currentDue) {
+    if (!specificDue) {
       return NextResponse.json(
-        { error: 'No active due found for your department' },
+        { error: 'Due not found or not active' },
         { status: 404 }
       )
     }
@@ -44,7 +48,7 @@ export async function POST(request) {
     // Check if student already has a payment record for this session
     const existingPayment = await Payment.findOne({
       studentId: student._id,
-      session: currentDue.session
+      session: specificDue.session
     })
     
     if (existingPayment) {
@@ -55,44 +59,36 @@ export async function POST(request) {
         )
       } else if (existingPayment.status === 'pending') {
         return NextResponse.json(
-          { error: 'Payment already marked as paid and pending confirmation' },
+          { error: 'Payment already submitted and pending verification' },
           { status: 400 }
         )
       }
     }
     
-    // Generate a unique reference using student ID and timestamp
-    const reference = `${student.regNo}-${currentDue.session}-${Date.now()}`
-    
-    // Create new payment record with pending status
-    const payment = new Payment({
+    // Create new payment record
+    const newPayment = new Payment({
       studentId: student._id,
-      session: currentDue.session,
-      amount: currentDue.amount,
-      reference: reference,
+      session: specificDue.session,
+      amount: specificDue.amount,
       status: 'pending',
-      paymentMethod: 'bank_transfer',
-      datePaid: new Date()
+      datePaid: new Date(),
+      reference: `${student.regNo}-${specificDue.session}-${Date.now()}`
     })
     
-    await payment.save()
+    await newPayment.save()
     
-    return NextResponse.json({
-      message: 'Payment marked as paid successfully. Awaiting official confirmation.',
-      payment: {
-        _id: payment._id,
-        session: payment.session,
-        amount: payment.amount,
-        status: payment.status,
-        reference: payment.reference,
-        datePaid: payment.datePaid
-      }
-    }, { status: 201 })
+    return NextResponse.json(
+      { 
+        message: 'Payment submitted successfully! It will be verified by the department official.',
+        payment: newPayment
+      },
+      { status: 201 }
+    )
     
   } catch (error) {
-    console.error('Mark payment error:', error)
+    console.error('Mark paid error:', error)
     return NextResponse.json(
-      { error: 'Failed to mark payment as paid' },
+      { error: 'Failed to submit payment' },
       { status: 500 }
     )
   }

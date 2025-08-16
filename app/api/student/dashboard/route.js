@@ -29,30 +29,44 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
     
-    // Get current due for student's department
-    const currentDue = await Due.findOne({
+    // Get ALL active dues for student's department
+    const allDues = await Due.find({
       department: student.department,
       isActive: true
     }).sort({ createdAt: -1 })
     
-    // Check if student has paid current due
-    let paymentStatus = 'unpaid'
-    if (currentDue) {
-      const existingPayment = await Payment.findOne({
-        studentId: student._id,
-        session: currentDue.session
-      }).sort({ createdAt: -1 })
-      
-      if (existingPayment) {
-        if (existingPayment.status === 'paid') {
-          paymentStatus = 'paid'
-        } else if (existingPayment.status === 'pending') {
-          paymentStatus = 'pending'
+    // Process each due to get payment status
+    const duesWithStatus = await Promise.all(
+      allDues.map(async (due) => {
+        // Check if student has paid this specific due
+        const existingPayment = await Payment.findOne({
+          studentId: student._id,
+          session: due.session
+        }).sort({ createdAt: -1 })
+        
+        let paymentStatus = 'unpaid'
+        if (existingPayment) {
+          if (existingPayment.status === 'paid') {
+            paymentStatus = 'paid'
+          } else if (existingPayment.status === 'pending') {
+            paymentStatus = 'pending'
+          }
+        } else if (new Date() > new Date(due.deadline)) {
+          paymentStatus = 'overdue'
         }
-      } else if (new Date() > new Date(currentDue.deadline)) {
-        paymentStatus = 'overdue'
-      }
-    }
+        
+        return {
+          id: due._id,
+          amount: due.amount,
+          description: due.description,
+          deadline: due.deadline,
+          session: due.session,
+          status: paymentStatus,
+          paymentId: existingPayment ? existingPayment._id : null,
+          datePaid: existingPayment && existingPayment.status === 'paid' ? existingPayment.datePaid : null
+        }
+      })
+    )
     
     // Get payment history (including pending payments)
     const paymentHistory = await Payment.find({
@@ -72,13 +86,10 @@ export async function GET(request) {
         department: student.department,
         email: student.email
       },
-      currentDue: currentDue ? {
-        amount: currentDue.amount,
-        description: currentDue.description,
-        deadline: currentDue.deadline,
-        status: paymentStatus,
-        session: currentDue.session
-      } : null,
+      // Return all dues instead of just current due
+      allDues: duesWithStatus,
+      // Keep currentDue for backward compatibility (most recent unpaid due)
+      currentDue: duesWithStatus.find(due => due.status === 'unpaid' || due.status === 'overdue') || null,
       paymentHistory: paymentHistory.map(payment => ({
         id: payment._id,
         session: payment.session,

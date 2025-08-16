@@ -6,16 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { CreditCard, Clock, AlertCircle, CheckCircle, Download, Copy, Calendar, DollarSign, Loader2 } from 'lucide-react'
+import { CreditCard, Calendar, DollarSign, CheckCircle, Clock, AlertCircle, Loader2, Download } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function StudentDashboard() {
-  const [copied, setCopied] = useState(false)
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [markingPaid, setMarkingPaid] = useState(false)
-  const [downloadingReceipt, setDownloadingReceipt] = useState(null)
+  const [markingPaid, setMarkingPaid] = useState({})
 
   useEffect(() => {
     fetchDashboardData()
@@ -24,7 +22,6 @@ export default function StudentDashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token')
-      // Token existence is already verified by ProtectedRoute
       
       const response = await fetch('/api/student/dashboard', {
         headers: {
@@ -47,9 +44,9 @@ export default function StudentDashboard() {
     }
   }
 
-  const handleMarkAsPaid = async () => {
+  const handleMarkAsPaid = async (dueId, session) => {
     try {
-      setMarkingPaid(true)
+      setMarkingPaid(prev => ({ ...prev, [dueId]: true }))
       const token = localStorage.getItem('token')
       
       const response = await fetch('/api/student/mark-paid', {
@@ -57,13 +54,13 @@ export default function StudentDashboard() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ dueId, session })
       })
 
       if (response.ok) {
         const data = await response.json()
         toast.success(data.message)
-        // Refresh dashboard data to show updated status
         await fetchDashboardData()
       } else {
         const errorData = await response.json()
@@ -73,7 +70,7 @@ export default function StudentDashboard() {
       console.error('Error marking payment as paid:', error)
       toast.error('Failed to mark payment as paid')
     } finally {
-      setMarkingPaid(false)
+      setMarkingPaid(prev => ({ ...prev, [dueId]: false }))
     }
   }
 
@@ -94,46 +91,6 @@ export default function StudentDashboard() {
       case "unpaid": return <Clock className="h-4 w-4" />
       case "overdue": return <AlertCircle className="h-4 w-4" />
       default: return <Clock className="h-4 w-4" />
-    }
-  }
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    toast.success('Account number copied to clipboard!')
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const downloadReceipt = async (paymentId, reference) => {
-    try {
-      setDownloadingReceipt(paymentId)
-      const token = localStorage.getItem('token')
-      
-      const response = await fetch(`/api/student/payments/${paymentId}/receipt`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `receipt-${reference}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        toast.success('Receipt downloaded successfully')
-      } else {
-        toast.error('Failed to download receipt')
-      }
-    } catch (error) {
-      console.error('Error downloading receipt:', error)
-      toast.error('Failed to download receipt')
-    } finally {
-      setDownloadingReceipt(null)
     }
   }
 
@@ -172,9 +129,9 @@ export default function StudentDashboard() {
     )
   }
 
-  const { student, currentDue, paymentHistory, bankDetails } = dashboardData
-  const isOverdue = currentDue && new Date(currentDue.deadline) < new Date()
-  const currentStatus = isOverdue ? "overdue" : (currentDue?.status || "paid")
+  const { student, allDues, paymentHistory, bankDetails } = dashboardData
+  const unpaidDues = allDues.filter(due => due.status === 'unpaid' || due.status === 'overdue')
+  const paidDues = allDues.filter(due => due.status === 'paid')
 
   return (
     <DashboardLayout userType="student" userName={student.name}>
@@ -185,103 +142,155 @@ export default function StudentDashboard() {
           <p className="text-gray-600">{student.studentId} • {student.department}</p>
         </div>
 
-        {/* Current Due Status */}
-        {currentDue ? (
-          <Card className="border-l-4" style={{borderLeftColor: '#026432'}}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center space-x-2">
-                  <CreditCard className="h-5 w-5" />
-                  <span>Current Payment Status</span>
-                </span>
-                <Badge className={getStatusColor(currentStatus)}>
-                  {getStatusIcon(currentStatus)}
-                  <span className="ml-1 capitalize">{currentStatus}</span>
-                </Badge>
-              </CardTitle>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Dues</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Amount Due</p>
-                  <p className="text-2xl font-bold text-gray-900">₦{currentDue.amount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Session</p>
-                  <p className="text-lg font-semibold">{currentDue.description}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Payment Deadline</p>
-                  <p className="text-lg font-semibold flex items-center space-x-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(currentDue.deadline).toLocaleDateString()}</span>
-                  </p>
-                </div>
-              </div>
-              
-              {/* Payment Action Buttons */}
-              {currentStatus === "unpaid" || currentStatus === "overdue" ? (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-semibold text-blue-900">Ready to pay?</h4>
-                      <p className="text-sm text-blue-700">Click the button below after making your payment</p>
-                    </div>
-                    <Button 
-                      onClick={handleMarkAsPaid}
-                      disabled={markingPaid}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {markingPaid ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Processing...
-                        </>
-                      ) : (
-                        'I have paid'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : currentStatus === "pending" ? (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <h4 className="font-semibold text-blue-900">Payment Pending Confirmation</h4>
-                      <p className="text-sm text-blue-700">Your payment has been marked as paid and is awaiting official confirmation.</p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              
-              {currentStatus === "overdue" && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800 text-sm">
-                    <AlertCircle className="h-4 w-4 inline mr-1" />
-                    Your payment is overdue. Please make payment as soon as possible to avoid penalties.
-                  </p>
-                </div>
-              )}
+              <div className="text-2xl font-bold">{allDues.length}</div>
             </CardContent>
           </Card>
-        ) : (
-          <Card className="border-l-4 border-l-green-600">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900">No Outstanding Dues</h3>
-                <p className="text-gray-600">You're all caught up with your payments!</p>
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Paid Dues</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{paidDues.length}</div>
             </CardContent>
           </Card>
-        )}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{unpaidDues.length}</div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Tabs defaultValue="payment-info" className="space-y-4">
+        <Tabs defaultValue="all-dues" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="all-dues">All Dues</TabsTrigger>
             <TabsTrigger value="payment-info">Payment Instructions</TabsTrigger>
             <TabsTrigger value="history">Payment History</TabsTrigger>
           </TabsList>
+
+          {/* All Dues Tab */}
+          <TabsContent value="all-dues">
+            <div className="space-y-4">
+              {allDues.length > 0 ? (
+                allDues.map((due) => {
+                  const isOverdue = new Date() > new Date(due.deadline) && due.status !== 'paid'
+                  const currentStatus = isOverdue && due.status === 'unpaid' ? 'overdue' : due.status
+                  
+                  return (
+                    <Card key={due.id} className={`border-l-4 ${
+                      due.status === 'paid' ? 'border-l-green-600' : 
+                      due.status === 'pending' ? 'border-l-blue-600' :
+                      isOverdue ? 'border-l-red-600' : 'border-l-yellow-600'
+                    }`}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span className="flex items-center space-x-2">
+                            <CreditCard className="h-5 w-5" />
+                            <span>{due.description}</span>
+                          </span>
+                          <Badge className={getStatusColor(currentStatus)}>
+                            {getStatusIcon(currentStatus)}
+                            <span className="ml-1 capitalize">{currentStatus}</span>
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600">Amount Due</p>
+                            <p className="text-2xl font-bold text-gray-900">₦{due.amount.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Session</p>
+                            <p className="text-lg font-semibold">{due.session}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Payment Deadline</p>
+                            <p className="text-lg font-semibold flex items-center space-x-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>{new Date(due.deadline).toLocaleDateString()}</span>
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Payment Action Buttons */}
+                        {(due.status === "unpaid" || currentStatus === "overdue") && (
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-semibold text-blue-900">Ready to pay?</h4>
+                                <p className="text-sm text-blue-700">Click the button below after making your payment</p>
+                              </div>
+                              <Button 
+                                onClick={() => handleMarkAsPaid(due.id, due.session)}
+                                disabled={markingPaid[due.id]}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                {markingPaid[due.id] ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Processing...
+                                  </>
+                                ) : (
+                                  'I have paid'
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {due.status === 'paid' && due.datePaid && (
+                          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-green-800 font-medium">
+                              ✓ Payment confirmed on {new Date(due.datePaid).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {due.status === 'pending' && (
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-blue-800 font-medium">
+                              ⏳ Payment pending verification by department official
+                            </p>
+                          </div>
+                        )}
+                        
+                        {currentStatus === "overdue" && (
+                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-800 font-medium">
+                              ⚠️ Your payment is overdue. Please make payment as soon as possible to avoid penalties.
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })
+              ) : (
+                <Card className="border-l-4 border-l-green-600">
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900">No Outstanding Dues</h3>
+                      <p className="text-gray-600">You're all caught up with your payments!</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
           {/* Payment Instructions Tab */}
           <TabsContent value="payment-info">
@@ -295,43 +304,25 @@ export default function StudentDashboard() {
               <CardContent className="space-y-4">
                 {bankDetails ? (
                   <>
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-blue-900 mb-2">Bank Transfer Details</h3>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-blue-700">Bank Name:</span>
-                          <span className="font-medium">{bankDetails.bankName}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-blue-700">Account Number:</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono font-medium">{bankDetails.accountNumber}</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => copyToClipboard(bankDetails.accountNumber)}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-blue-700">Account Name:</span>
-                          <span className="font-medium">{bankDetails.accountName}</span>
-                        </div>
-                        {currentDue && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-blue-700">Amount:</span>
-                            <span className="font-bold text-lg">₦{currentDue.amount.toLocaleString()}</span>
-                          </div>
-                        )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-600">Bank Name</p>
+                        <p className="font-semibold">{bankDetails.bankName}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Account Number</p>
+                        <p className="font-semibold">{bankDetails.accountNumber}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Account Name</p>
+                        <p className="font-semibold">{bankDetails.accountName}</p>
                       </div>
                     </div>
-
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-yellow-900 mb-2">Important Instructions</h3>
-                      <ul className="text-sm text-yellow-800 space-y-1">
-                        <li>• Use your Student ID ({student.studentId}) as payment reference</li>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Payment Instructions:</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Transfer the exact amount to the account details above</li>
+                        <li>• Use your student ID as the payment reference</li>
                         <li>• Keep your payment receipt/teller for verification</li>
                         <li>• Click "I have paid" button after making the payment</li>
                         <li>• Payment confirmation may take 24-48 hours after verification</li>
@@ -361,64 +352,37 @@ export default function StudentDashboard() {
                     {paymentHistory.map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
-                          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                            payment.status === 'paid' ? 'bg-green-100' : 
-                            payment.status === 'pending' ? 'bg-blue-100' : 'bg-gray-100'
-                          }`}>
-                            {payment.status === 'paid' ? (
-                              <CheckCircle className="h-5 w-5 text-green-600" />
-                            ) : payment.status === 'pending' ? (
-                              <Clock className="h-5 w-5 text-blue-600" />
-                            ) : (
-                              <AlertCircle className="h-5 w-5 text-gray-600" />
-                            )}
-                          </div>
+                          <div className={`w-3 h-3 rounded-full ${
+                            payment.status === 'paid' ? 'bg-green-500' :
+                            payment.status === 'pending' ? 'bg-blue-500' : 'bg-red-500'
+                          }`}></div>
                           <div>
                             <p className="font-semibold">{payment.session}</p>
                             <p className="text-sm text-gray-600">
-                              {payment.status === 'paid' ? `Paid on ${new Date(payment.datePaid).toLocaleDateString()}` :
-                               payment.status === 'pending' ? 'Pending confirmation' :
-                               'Payment failed'}
+                              {payment.datePaid ? new Date(payment.datePaid).toLocaleDateString() : 'Pending'}
                             </p>
-                            <p className="text-xs text-gray-500">Ref: {payment.reference}</p>
+                            {payment.reference && (
+                              <p className="text-xs text-gray-500">Ref: {payment.reference}</p>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={`font-bold ${
+                          <Badge className={getStatusColor(payment.status)}>
+                            {payment.status}
+                          </Badge>
+                          <p className={`text-lg font-semibold ${
                             payment.status === 'paid' ? 'text-green-600' :
                             payment.status === 'pending' ? 'text-blue-600' : 'text-gray-600'
                           }`}>
                             ₦{payment.amount.toLocaleString()}
                           </p>
-                          // In the payment history section, update the download button:
-                          {payment.status === 'paid' && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => downloadReceipt(payment.id, payment.reference)}
-                              disabled={downloadingReceipt === payment.id}
-                            >
-                              {downloadingReceipt === payment.id ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                  Downloading...
-                                </>
-                              ) : (
-                                <>
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Receipt
-                                </>
-                              )}
-                            </Button>
-                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No payment history available</p>
+                    <p className="text-gray-500">No payment history available</p>
                   </div>
                 )}
               </CardContent>
