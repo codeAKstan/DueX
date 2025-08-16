@@ -71,11 +71,14 @@ export async function POST(request) {
     }
 
     // Add role-specific fields
+    // In the userData creation section, update:
     if (role === 'student') {
       userData.regNo = regNo
       userData.department = department
     } else if (role === 'official') {
       userData.position = position
+      // Add this line:
+      userData.department = department
     } else if (role === 'admin') {
       // For admin created by another admin, set createdBy
       const adminExists = await User.adminExists()

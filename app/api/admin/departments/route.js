@@ -195,19 +195,20 @@ export async function PUT(request) {
     }
     
     // Check if department code already exists (if provided, excluding current department)
-    if (departmentCode) {
-      const existingCode = await Department.findOne({ 
-        code: { $regex: new RegExp(`^${departmentCode}$`, 'i') },
-        _id: { $ne: departmentId },
-        isActive: true 
-      })
-      
-      if (existingCode) {
-        return NextResponse.json(
-          { error: 'Department code already exists' },
-          { status: 400 }
-        )
-      }
+    // Update the department code validation:
+    if (departmentCode && departmentCode.trim()) {
+    const existingCode = await Department.findOne({ 
+    code: { $regex: new RegExp(`^${departmentCode.trim()}$`, 'i') },
+    _id: { $ne: departmentId },
+    isActive: true 
+    })
+    
+    if (existingCode) {
+    return NextResponse.json(
+    { error: 'Department code already exists' },
+    { status: 400 }
+    )
+    }
     }
     
     // Validate official if provided
@@ -233,7 +234,11 @@ export async function PUT(request) {
       departmentId,
       {
         name: departmentName,
+        // In both POST and PUT routes, replace:
         code: departmentCode,
+        
+        // With:
+        code: departmentCode && departmentCode.trim() ? departmentCode.trim() : null,
         faculty,
         official: officialId || null
       },

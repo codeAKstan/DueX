@@ -29,7 +29,7 @@ export default function Footer() {
             <span className="ml-2 text-sm text-gray-400">by Your University Tech Team</span>
           </div>
           <p className="text-center text-xs leading-5 text-gray-400 md:text-left mt-2">
-            &copy; 2024 DueX. All rights reserved. Transforming Nigerian university administration.
+            &copy; 2025 DueX. All rights reserved. Transforming Nigerian university administration.
           </p>
         </div>
       </div>
