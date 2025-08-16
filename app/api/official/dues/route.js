@@ -62,20 +62,9 @@ export async function POST(request) {
       )
     }
 
-    // Check if there's already an active due for this session
-    const existingDue = await Due.findOne({
-      department: official.department,
-      session: session,
-      isActive: true
-    })
-
-    if (existingDue) {
-      return NextResponse.json(
-        { error: 'An active due already exists for this session' },
-        { status: 400 }
-      )
-    }
-
+    // Remove the restriction - allow multiple active dues
+    // Officials can now create multiple dues without deactivating previous ones
+    
     // Create new due
     const newDue = new Due({
       session,
