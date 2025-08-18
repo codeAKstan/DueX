@@ -38,18 +38,18 @@ export async function GET(request) {
     // Process each due to get payment status
     const duesWithStatus = await Promise.all(
       allDues.map(async (due) => {
-        // Check if student has paid this specific due
+        // Check if student has paid this SPECIFIC due
         const existingPayment = await Payment.findOne({
           studentId: student._id,
-          session: due.session
-        }).sort({ createdAt: -1 })
+          dueId: due._id  // Match specific due
+        })
         
         let paymentStatus = 'unpaid'
         if (existingPayment) {
           if (existingPayment.status === 'paid') {
             paymentStatus = 'paid'
           } else if (existingPayment.status === 'pending') {
-            paymentStatus = 'pending'
+            paymentStatus = 'pending'  // Shows pending status
           }
         } else if (new Date() > new Date(due.deadline)) {
           paymentStatus = 'overdue'

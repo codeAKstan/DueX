@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Payment from '@/models/Payment'
+import Due from '@/models/Due'
 import jwt from 'jsonwebtoken'
 
 export async function PUT(request) {
@@ -57,6 +58,25 @@ export async function PUT(request) {
         { error: 'Payment is not in pending status' },
         { status: 400 }
       )
+    }
+
+    // Handle missing dueId for old payment records
+    if (!payment.dueId) {
+      // Find the due based on session and department
+      const matchingDue = await Due.findOne({
+        session: payment.session,
+        department: payment.studentId.department,
+        isActive: true
+      })
+      
+      if (matchingDue) {
+        payment.dueId = matchingDue._id
+      } else {
+        return NextResponse.json(
+          { error: 'Cannot find matching due for this payment' },
+          { status: 400 }
+        )
+      }
     }
 
     // Update payment status

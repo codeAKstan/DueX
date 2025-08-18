@@ -58,7 +58,7 @@ export async function GET(request) {
       students.map(async (student) => {
         const payment = currentDue ? await Payment.findOne({
           studentId: student._id,
-          session: currentDue.session
+          dueId: currentDue._id  // Match specific due, not just session
         }).sort({ createdAt: -1 }) : null
 
         let status = 'unpaid'

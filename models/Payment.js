@@ -6,6 +6,11 @@ const paymentSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  dueId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Due',
+    required: true
+  },
   session: {
     type: String,
     required: true

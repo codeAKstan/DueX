@@ -45,34 +45,35 @@ export async function POST(request) {
       )
     }
     
-    // Check if student already has a payment record for this session
+    // Check if student already has a payment record for this SPECIFIC due
     const existingPayment = await Payment.findOne({
       studentId: student._id,
-      session: specificDue.session
+      dueId: specificDue._id  // Check specific due, not just session
     })
     
     if (existingPayment) {
       if (existingPayment.status === 'paid') {
         return NextResponse.json(
-          { error: 'Payment already confirmed for this session' },
+          { error: 'Payment already confirmed for this due' },
           { status: 400 }
         )
       } else if (existingPayment.status === 'pending') {
         return NextResponse.json(
-          { error: 'Payment already submitted and pending verification' },
+          { error: 'Payment already submitted and pending verification for this due' },
           { status: 400 }
         )
       }
     }
     
-    // Create new payment record
+    // Create new payment record with dueId
     const newPayment = new Payment({
       studentId: student._id,
+      dueId: specificDue._id,  // Specific due ID
       session: specificDue.session,
       amount: specificDue.amount,
-      status: 'pending',
+      status: 'pending',  // Status is set to pending
       datePaid: new Date(),
-      reference: `${student.regNo}-${specificDue.session}-${Date.now()}`
+      reference: `${student.regNo}-${specificDue._id}-${Date.now()}`
     })
     
     await newPayment.save()
