@@ -1,0 +1,45 @@
+@startuml DueX Sequence Diagram - Payment Process
+!theme plain
+
+title DueX System - Payment Submission and Verification Sequence
+
+actor Student
+actor Official
+participant "Student Dashboard" as SD
+participant "Payment API" as PA
+participant "Database" as DB
+participant "Official Dashboard" as OD
+participant "Verification API" as VA
+
+== Payment Submission ==
+Student -> SD: Login and view dashboard
+SD -> DB: Fetch active dues for student
+DB --> SD: Return due payments list
+SD --> Student: Display active dues
+
+Student -> SD: Select due and submit payment proof
+SD -> PA: POST /api/student/payments
+PA -> DB: Create payment record (status: pending)
+DB --> PA: Payment created
+PA --> SD: Payment submitted successfully
+SD --> Student: Show confirmation message
+
+== Payment Verification ==
+Official -> OD: Login and view dashboard
+OD -> DB: Fetch pending payments for department
+DB --> OD: Return pending payments list
+OD --> Official: Display payments awaiting confirmation
+
+Official -> OD: Review payment details
+Official -> OD: Approve/Reject payment
+OD -> VA: PUT /api/official/payments/confirm
+VA -> DB: Update payment status and verifiedBy
+DB --> VA: Payment status updated
+VA --> OD: Verification completed
+OD --> Official: Show updated payment status
+
+== Notification to Student ==
+VA -> SD: Notify payment status change
+SD --> Student: Payment approved/rejected notification
+
+@enduml

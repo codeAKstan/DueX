@@ -1,0 +1,58 @@
+@startuml DueX Activity Diagram - Payment Workflow
+!theme plain
+
+title DueX System - Payment Management Activity Diagram
+
+start
+
+:Official logs into system;
+:Official creates new due for department;
+:Due is saved to database;
+:Students receive notification of new due;
+
+fork
+  :Student A logs in;
+  :Views active dues;
+  :Makes payment via bank transfer;
+  :Submits payment proof with reference;
+fork again
+  :Student B logs in;
+  :Views active dues;
+  :Makes payment via online method;
+  :Submits payment proof with reference;
+fork again
+  :Student C logs in;
+  :Views active dues;
+  :Decides to pay later;
+  stop
+end fork
+
+:Payment records created with "pending" status;
+
+:Official receives notification of pending payments;
+:Official logs into dashboard;
+:Reviews payment submissions;
+
+while (More payments to verify?) is (yes)
+  :Select payment to verify;
+  :Check payment reference and amount;
+  
+  if (Payment valid?) then (yes)
+    :Approve payment;
+    :Update status to "paid";
+    :Record verification details;
+  else (no)
+    :Reject payment;
+    :Update status to "failed";
+    :Add rejection reason;
+  endif
+  
+  :Send notification to student;
+endwhile (no)
+
+:Generate payment reports;
+:Update department statistics;
+
+stop
+
+@enduml

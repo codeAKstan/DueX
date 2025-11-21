@@ -1,0 +1,97 @@
+@startuml DueX Class Diagram
+!theme plain
+
+title DueX System - Class Diagram
+
+class User {
+  -_id: ObjectId
+  -firstName: String
+  -lastName: String
+  -email: String
+  -password: String
+  -role: String
+  -regNo: String
+  -department: String
+  -position: String
+  -createdBy: ObjectId
+  -isFirstAdmin: Boolean
+  -isActive: Boolean
+  -timestamps: Date
+  +comparePassword(candidatePassword: String): Boolean
+  +adminExists(): Boolean
+}
+
+class Payment {
+  -_id: ObjectId
+  -studentId: ObjectId
+  -dueId: ObjectId
+  -session: String
+  -amount: Number
+  -datePaid: Date
+  -status: String
+  -reference: String
+  -paymentMethod: String
+  -verifiedBy: ObjectId
+  -verifiedAt: Date
+  -timestamps: Date
+}
+
+class Due {
+  -_id: ObjectId
+  -session: String
+  -description: String
+  -amount: Number
+  -deadline: Date
+  -department: String
+  -createdBy: ObjectId
+  -isActive: Boolean
+  -timestamps: Date
+}
+
+class BankDetails {
+  -_id: ObjectId
+  -department: String
+  -bankName: String
+  -accountNumber: String
+  -accountName: String
+  -timestamps: Date
+}
+
+class Department {
+  -_id: ObjectId
+  -name: String
+  -code: String
+  -isActive: Boolean
+  -timestamps: Date
+}
+
+' Relationships
+User ||--o{ Payment : "student makes"
+User ||--o{ Due : "official creates"
+User ||--o{ Payment : "official verifies"
+Due ||--o{ Payment : "payment for"
+Department ||--|| BankDetails : "has"
+Department ||--o{ User : "belongs to"
+Department ||--o{ Due : "has"
+
+' Notes
+note right of User
+  Role can be:
+  - student
+  - official
+  - admin
+end note
+
+note right of Payment
+  Status can be:
+  - paid
+  - pending
+  - failed
+  
+  Payment methods:
+  - bank_transfer
+  - online
+  - cash
+end note
+
+@enduml

@@ -19,6 +19,10 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    if (!official.department) {
+      return NextResponse.json({ error: 'Official department not set' }, { status: 400 })
+    }
+
     const department = official.department
     
     // Get all dues for the department
@@ -50,6 +54,10 @@ export async function POST(request) {
     const official = await User.findById(decoded.userId)
     if (!official || official.role !== 'official') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    if (!official.department) {
+      return NextResponse.json({ error: 'Official department not set' }, { status: 400 })
     }
 
     const { session, description, amount, deadline } = await request.json()
@@ -105,6 +113,10 @@ export async function PUT(request) {
     const official = await User.findById(decoded.userId)
     if (!official || official.role !== 'official') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    if (!official.department) {
+      return NextResponse.json({ error: 'Official department not set' }, { status: 400 })
     }
 
     const { dueId, session, description, amount, deadline, isActive } = await request.json()

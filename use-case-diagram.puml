@@ -1,0 +1,75 @@
+@startuml DueX Use Case Diagram
+!theme plain
+
+title DueX System - Use Case Diagram
+
+' Actors
+actor Student
+actor "Department Official" as Official
+actor "System Admin" as Admin
+
+' System boundary
+rectangle "DueX System" {
+  ' Authentication use cases
+  usecase "Login" as UC1
+  usecase "Register" as UC2
+  
+  ' Student use cases
+  usecase "View Dashboard" as UC3
+  usecase "View Due Payments" as UC4
+  usecase "Submit Payment Proof" as UC5
+  usecase "View Payment History" as UC6
+  usecase "Update Profile" as UC7
+  
+  ' Official use cases
+  usecase "Manage Students" as UC8
+  usecase "Create Dues" as UC9
+  usecase "Confirm Payments" as UC10
+  usecase "Generate Reports" as UC11
+  usecase "Manage Bank Details" as UC12
+  
+  ' Admin use cases
+  usecase "Manage Users" as UC13
+  usecase "View System Statistics" as UC14
+  usecase "Manage Departments" as UC15
+}
+
+' Student relationships
+Student --> UC1
+Student --> UC2
+Student --> UC3
+Student --> UC4
+Student --> UC5
+Student --> UC6
+Student --> UC7
+
+' Official relationships
+Official --> UC1
+Official --> UC8
+Official --> UC9
+Official --> UC10
+Official --> UC11
+Official --> UC12
+
+' Admin relationships
+Admin --> UC1
+Admin --> UC13
+Admin --> UC14
+Admin --> UC15
+
+' Include relationships
+UC3 ..> UC1 : <<include>>
+UC4 ..> UC1 : <<include>>
+UC5 ..> UC1 : <<include>>
+UC6 ..> UC1 : <<include>>
+UC7 ..> UC1 : <<include>>
+UC8 ..> UC1 : <<include>>
+UC9 ..> UC1 : <<include>>
+UC10 ..> UC1 : <<include>>
+UC11 ..> UC1 : <<include>>
+UC12 ..> UC1 : <<include>>
+UC13 ..> UC1 : <<include>>
+UC14 ..> UC1 : <<include>>
+UC15 ..> UC1 : <<include>>
+
+@enduml
