@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function VerifyPaymentPage() {
+function VerifyContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [status, setStatus] = useState('loading')
@@ -75,6 +75,28 @@ export default function VerifyPaymentPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function VerifyPaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-xl mx-auto mt-16">
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Verification</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Preparing verification...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
   )
 }
 
