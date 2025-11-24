@@ -14,6 +14,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [markingPaid, setMarkingPaid] = useState({})
+  const [payingOnline, setPayingOnline] = useState({})
 
   useEffect(() => {
     fetchDashboardData()
@@ -71,6 +72,40 @@ export default function StudentDashboard() {
       toast.error('Failed to mark payment as paid')
     } finally {
       setMarkingPaid(prev => ({ ...prev, [dueId]: false }))
+    }
+  }
+
+  const handlePayOnline = async (dueId) => {
+    try {
+      setPayingOnline(prev => ({ ...prev, [dueId]: true }))
+      const token = localStorage.getItem('token')
+
+      const response = await fetch('/api/student/paystack/initialize', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ dueId })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success('Redirecting to Paystack...')
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url
+        } else {
+          toast.error('Authorization URL missing')
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to initialize online payment')
+      }
+    } catch (error) {
+      console.error('Error initializing Paystack payment:', error)
+      toast.error('Failed to initialize online payment')
+    } finally {
+      setPayingOnline(prev => ({ ...prev, [dueId]: false }))
     }
   }
 
@@ -231,22 +266,24 @@ export default function StudentDashboard() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <h4 className="font-semibold text-blue-900">Ready to pay?</h4>
-                                <p className="text-sm text-blue-700">Click the button below after making your payment</p>
+                                <p className="text-sm text-blue-700">Pay online with Paystack</p>
                               </div>
-                              <Button 
-                                onClick={() => handleMarkAsPaid(due.id, due.session)}
-                                disabled={markingPaid[due.id]}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                {markingPaid[due.id] ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Processing...
-                                  </>
-                                ) : (
-                                  'I have paid'
-                                )}
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  onClick={() => handlePayOnline(due.id)}
+                                  disabled={payingOnline[due.id]}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  {payingOnline[due.id] ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Redirecting...
+                                    </>
+                                  ) : (
+                                    'Pay with Paystack'
+                                  )}
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         )}
