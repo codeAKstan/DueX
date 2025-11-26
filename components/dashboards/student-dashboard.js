@@ -98,8 +98,9 @@ export default function StudentDashboard() {
           toast.error('Authorization URL missing')
         }
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to initialize online payment')
+        const errorData = await response.json().catch(() => ({}))
+        const detailMsg = errorData?.details?.message || errorData?.details?.data?.message
+        toast.error(detailMsg || errorData.error || 'Failed to initialize online payment')
       }
     } catch (error) {
       console.error('Error initializing Paystack payment:', error)

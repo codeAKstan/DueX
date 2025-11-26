@@ -53,6 +53,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Paystack secret not configured' }, { status: 500 })
     }
 
+    const origin = (() => {
+      try {
+        const u = new URL(request.url)
+        return u.origin
+      } catch {
+        return process.env.NEXT_PUBLIC_BASE_URL || ''
+      }
+    })()
+
     const initRes = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
@@ -63,13 +72,20 @@ export async function POST(request) {
         email: student.email,
         amount: amountKobo,
         reference,
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || ''}/payments/verify?reference=${reference}`
+        callback_url: `${origin}/payments/verify?reference=${reference}`,
+        currency: 'NGN',
+        metadata: {
+          studentId: student._id.toString(),
+          dueId: due._id.toString(),
+          session: due.session
+        }
       })
     })
 
     if (!initRes.ok) {
-      const err = await initRes.json().catch(() => null)
-      return NextResponse.json({ error: 'Failed to initialize payment', details: err || undefined }, { status: 500 })
+      let err
+      try { err = await initRes.json() } catch { err = { status: initRes.status } }
+      return NextResponse.json({ error: 'Failed to initialize payment', details: err }, { status: 500 })
     }
 
     const initData = await initRes.json()
