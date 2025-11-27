@@ -5,9 +5,15 @@ import Payment from '@/models/Payment'
 import Due from '@/models/Due'
 import { verifyToken } from '@/lib/auth'
 
+function sanitizePart(s) {
+  return String(s).replace(/[^a-zA-Z0-9-]/g, '-')
+}
+
 function generateReference(student, dueId) {
   const rnd = Math.random().toString(36).slice(2, 8)
-  return `${student.regNo}-${dueId}-${Date.now()}-${rnd}`
+  const reg = sanitizePart(student.regNo)
+  const ref = `${reg}-${dueId}-${Date.now()}-${rnd}`
+  return sanitizePart(ref)
 }
 
 export async function POST(request) {
