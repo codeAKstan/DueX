@@ -34,7 +34,7 @@ export default function Hero() {
           </div>
           <div className="mt-16">
             <img
-              src="/black_students.webp?height=600&width=1000"
+              src="/Black_Computer_Students.jpg?height=600&width=1000"
               alt="DueX Dashboard Preview"
               className="mx-auto rounded-xl shadow-2xl ring-1 ring-white/10"
             />
