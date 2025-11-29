@@ -26,7 +26,7 @@ export default function Footer() {
         <div className="mt-8 md:order-1 md:mt-0">
           <div className="flex items-center justify-center md:justify-start">
             <span className="text-2xl font-bold text-white">DueX</span>
-            <span className="ml-2 text-sm text-gray-400">by Your University Tech Team</span>
+            <span className="ml-2 text-sm text-gray-400">by Duex Tech Team</span>
           </div>
           <p className="text-center text-xs leading-5 text-gray-400 md:text-left mt-2">
             &copy; 2025 DueX. All rights reserved. Transforming Nigerian university administration.

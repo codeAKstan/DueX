@@ -45,8 +45,8 @@ export default function HowItWorks() {
                   <p className="text-sm text-gray-300">{step.description}</p>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-full w-full">
-                    <ArrowRight className="h-6 w-6 text-green-400 mx-auto" />
+                  <div className="hidden lg:block absolute top-6 left-48">
+                    <ArrowRight className="h-8 w-8 text-green-400 mx-auto" />
                   </div>
                 )}
               </div>
